@@ -1,0 +1,6 @@
+# Use COPY instead of ADD in Dockerfile
+CIS-DI-0009
+# Use latest tag because to check the image inside only
+DKL-DI-0006
+# set root to default user because it will be use for next build
+CIS-DI-0001

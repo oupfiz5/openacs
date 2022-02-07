@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+
+<!-- This must be moved to the OpenACS page root when making a release tarball -->
+
+<application name="openacs" pretty-name="OpenACS" home="http://openacs.org/">
+
+  <actions>
+    <install package="openacs-bootstrap3-theme"/>
+
+    <set-parameter package-key="acs-subsite" name="DefaultMaster" value="tabbed-master"/>
+    <set-parameter package-key="acs-subsite" name="StreamingHead" value="tabbed-streaming-head"/>
+    <set-parameter package-key="acs-subsite" name="ThemeKey" value="openacs_bootstrap3"/>
+
+    <set-parameter package-key="acs-subsite" name="ResourceDir" value="/packages/openacs-bootstrap3-theme/resources"/>
+
+    <set-parameter package-key="acs-subsite" name="ThemeCSS" value="{-href /resources/acs-subsite/site-master.css -media all -order 0}
+                {-href urn:ad:css:bootstrap3 -media all -order 1}
+                {-href /resources/openacs-bootstrap3-theme/css/main.css -media all -order 2}
+                {-href /resources/openacs-bootstrap3-theme/css/color/grey.css -media all -order 3}
+                {-href /resources/acs-templating/forms.css -media all -order 4}
+                {-href /resources/acs-templating/lists.css -media all -order 5}"/>
+
+    <set-parameter package-key="acs-subsite" name="ThemeJS" value="{-src urn:ad:js:jquery -order 1}
+                {-src urn:ad:js:bootstrap3 -order 2}" />
+
+<!-- We could mount automaticall additional packages; some packages need to be mounted, before configuration option can be added
+    <mount package="..." mount-point="..." instance-name="..."/>
+-->
+
+    <!-- <set-parameter package-key="acs-templating" name="RichTextEditor" value="ckeditor4"/> -->
+
+    <set-parameter package-key="acs-bootstrap-installer" name="post_installation_message" value="When the server restarts click <a href='/acs-admin'>here</a> to configure OpenACS"/>
+  </actions>
+
+</application>

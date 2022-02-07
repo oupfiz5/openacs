@@ -1,0 +1,71 @@
+name: Tests and Checks
+
+# * Controls
+# Controls when the action will run.
+on:
+  push:
+    paths:
+      - '.github/*'
+      - '.github/workflows/*'
+      - 'src/*.sh'
+      - 'src/Dockerfile*'
+      - 'src/VERSIONS'
+      - 'src/hook/*'
+      - 'src/rootfs/**'
+      - 'tests/**'
+    branches-ignore:
+      - 'master'
+      - 'main'
+  pull_request:
+    paths:
+      - '.github/*'
+      - '.github/workflows/*'
+      - 'src/*.sh'
+      - 'src/Dockerfile*'
+      - 'src/VERSIONS'
+      - 'src/hook/*'
+      - 'src/rootfs/**'
+      - 'tests/**'
+    branches-ignore:
+      - 'master'
+      - 'main'
+  workflow_dispatch:
+
+# * Jobs
+jobs:
+  checks:
+    name: Tests and Checks
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Repo checkout
+        uses: actions/checkout@v2
+
+      - name: Check shell files (shellcheck)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install shellcheck
+          cd ${GITHUB_WORKSPACE}/tests
+          .bats-battery/bats-core/bin/bats 01.shellchecks.bats
+
+      - name: Check Dockerfile (hadolint)
+        run: |
+          cd ${GITHUB_WORKSPACE}/tests
+          .bats-battery/bats-core/bin/bats 02.dockerfile_check.bats
+
+      - name: Naviserver. Build. Check image and container.
+        run: |
+          echo "::group::Build image"
+          set -a; source ${GITHUB_WORKSPACE}/src/VERSIONS ; set +a;
+          export IMAGE="${IMAGE:-${IMAGE_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}}"
+          echo "Build image"
+          cd ${GITHUB_WORKSPACE}/src/hook
+          ./build.sh
+          echo "::endgroup::"
+
+          echo "::group::Check image and container"
+          cd ${GITHUB_WORKSPACE}/tests
+          echo "Check docker image (dockle)"
+          .bats-battery/bats-core/bin/bats 03.docker_image_check.bats
+          echo "Check docker container"
+          .bats-battery/bats-core/bin/bats 04.container_check.bats
+          echo "::endgroup::"
