@@ -553,7 +553,7 @@ For debugging and maintenance purposes you may want access the containers shell.
 :CUSTOM_ID: ----github--trigger-on-push
 :END:
 #+begin_src yaml :shebang ""
-Trigger: 1
+Trigger: 2
 #+end_src
 ** ../.gitignore :code:
 :PROPERTIES:
