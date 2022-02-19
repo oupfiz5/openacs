@@ -1,8 +1,8 @@
 #!/bin/bash
-_CONF="${1:-'/usr/local/ns/conf/openacs_config.tcl'}"
+_CONF="${1:-'/usr/local/ns/conf/openacs-config.tcl'}"
 
 
-until PGPASSWORD="${DB_PASS}" pg_isready -h "${DB_HOST}" -U "${DB_USER}"; do
+until PGPASSWORD="${PGPASSWORD}" pg_isready -h "${PGHOST}" -U "${PGUSER}"; do
     >&2 echo "Postgres db is unavailable - sleeping"
     sleep 1
 done

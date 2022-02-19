@@ -8,7 +8,7 @@ ARG \
 FROM ${NS_IMAGE_REPOSITORY}/${NS_IMAGE_NAME}:${NS_IMAGE_TAG}
 
 # * Environment
-ENV NS_CONF="/usr/local/ns/conf/openacs_config.tcl"
+ENV NS_CONF="/usr/local/ns/conf/openacs-config.tcl"
 
 ARG \
     BUILD_DATE="${BUILD_DATE}" \
@@ -60,8 +60,7 @@ RUN tar xzf /tmp/openacs-bootstrap3-theme-"${OACS_TAG}".tar.gz -C /var/www/opena
     rm /tmp/openacs-bootstrap3-theme-"${OACS_TAG}".tar.gz
 
 # ** Copy openacs configuration files
-COPY rootfs/usr/local/ns/conf/openacs_config.tcl /usr/local/ns/conf/openacs_config.tcl
-COPY rootfs/usr/local/ns/conf/config_vars.tcl /usr/local/ns/conf/config_vars.tcl
+COPY rootfs/usr/local/ns/conf/openacs-config.tcl /usr/local/ns/conf/openacs-config.tcl
 COPY rootfs/var/www/openacs/www/SYSTEM/openacs-test.tcl /var/www/openacs/www/SYSTEM/openacs-test.tcl
 
 # ** Install and configure extra OpenACS packages
@@ -79,4 +78,4 @@ EXPOSE 8000
 ENTRYPOINT ["/run_openacs.sh"]
 
 # ** Cmd
-CMD [ "/usr/local/ns/conf/openacs_config.tcl"]
+CMD [ "/usr/local/ns/conf/openacs-config.tcl"]
