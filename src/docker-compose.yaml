@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   openacs:
-    image: "${IMAGE_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}"
+    image: "${OACS_REPOSITORY}/${OACS_IMAGE_NAME}:${OACS_IMAGE_TAG}"
     env_file:
       - .env
     volumes:
@@ -11,9 +11,9 @@ services:
     depends_on:
       - postgres
     ports:
-      - ${OACS_LISTEN_PORT}:8000
+      - ${OACS_LISTEN_PORT}:${oacs_httpport}
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO - http://localhost:${OACS_LISTEN_PORT}/SYSTEM/openacs-test || exit 1"]
+      test: ["CMD-SHELL", "wget -qO - http://localhost:${oacs_httpport}/SYSTEM/openacs-test || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 2
@@ -28,7 +28,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER}"]
       interval: 10s
       timeout: 5s
       retries: 5

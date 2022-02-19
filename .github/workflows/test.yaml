@@ -56,7 +56,6 @@ jobs:
         run: |
           echo "::group::Build image"
           set -a; source ${GITHUB_WORKSPACE}/src/VERSIONS ; set +a;
-          export IMAGE="${IMAGE:-${IMAGE_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}}"
           echo "Build image"
           cd ${GITHUB_WORKSPACE}/src/hook
           ./build.sh

@@ -44,14 +44,17 @@ If you are reading this on GitHub, then you are looking at a Git mirror of the s
     - [[#prune-all][Prune all]]
 - [[#configuration-options][Configuration options]]
   - [[#general-options][General options]]
-  - [[#timezone][Timezone]]
+  - [[#oacs_-variables][oacs_* variables]]
   - [[#openacs-listen-port][OpenACS listen port]]
+  - [[#openacs-docker-image][OpenACS docker image]]
   - [[#naviserver-configuration-file][NaviServer configuration file]]
-  - [[#naviserver-variable-file][NaviServer variable file]]
+  - [[#postgresql-docker-image][PostgreSQL docker image]]
   - [[#database-hostname][Database hostname]]
+  - [[#database-name][Database name]]
   - [[#database-username][Database username]]
   - [[#database-password][Database password]]
   - [[#postgres-tag][Postgres tag]]
+  - [[#timezone][Timezone]]
 - [[#cicd][CI/CD]]
 - [[#maintenance][Maintenance]]
   - [[#shell-access][Shell access]]
@@ -123,25 +126,39 @@ You can download docker images from dockerhub:
 :PROPERTIES:
 :CUSTOM_ID: build-arguments
 :END:
- |------------+-----------+-----------------------------|
- | Arguments  | Default   | Description                 |
- |------------+-----------+-----------------------------|
- | BUILD_DATE | none      | Set build date for label    |
- |------------+-----------+-----------------------------|
- | OACS_TAG   | oacs-5-10 | Set default OpenACS version |
- |------------+-----------+-----------------------------|
-
+ |---------------------+-----------------------+---------------------------|
+ | Arguments           | Default               | Description               |
+ |---------------------+-----------------------+---------------------------|
+ | BUILD_DATE          | none                  | Set build date for label  |
+ |---------------------+-----------------------+---------------------------|
+ | OACS_TAG            | oacs-5-10             | Set OpenACS version       |
+ |---------------------+-----------------------+---------------------------|
+ | NS_IMAGE_TAG        | 20.04-4.99.23         | Set NaviServer version    |
+ |---------------------+-----------------------+---------------------------|
+ | NS_IMAGE_REPOSITORY | oupfiz5               | Set NaviServer repository |
+ |---------------------+-----------------------+---------------------------|
+ | NS_IMAGE_NAME       | naviserver            | Set NaviServer image name |
+ |---------------------+-----------------------+---------------------------|
+ | IMAGE_NAME          | openacs               | Set OpenaACS image name   |
+ |---------------------+-----------------------+---------------------------|
+ | IMAGE_REPOSITORY    | oupfiz5               | Set OpenACS repository    |
+ |---------------------+-----------------------+---------------------------|
+ | IMAGE_TAG           | oacs-5-10             | Set OpenACS image tag     |
+ |---------------------+-----------------------+---------------------------|
 *** Example of build
 :PROPERTIES:
 :CUSTOM_ID: example-of-build
 :END:
+
 #+begin_src sh :tangle no :noweb yes :dir ../src
-    docker build --no-cache \
-      --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-      --build-arg OACS_TAG="oacs-5-10" \
-      -t oupfiz5/openacs:oacs-5-10 \
-      -f ./Dockerfile \
-      .
+  set -a; source ../VERSIONS ; set +a;
+  IMAGE="${IMAGE:-${IMAGE_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}}"
+  docker build --no-cache \
+         --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+         --build-arg OACS_TAG="oacs-5-10" \
+         -t "${IMAGE}" \
+         -f ./Dockerfile \
+         .
 #+end_src
 
 * Quickstart
@@ -244,36 +261,83 @@ docker-compose ps
 :PROPERTIES:
 :CUSTOM_ID: general-options
 :END:
-|------------------+--------------------+-------------------------------------|
-| Option           | Default            | Description                         |
-|------------------+--------------------+-------------------------------------|
-| [[*Timezone][TZ]]               | UTC                | Set timezone, example Europe/Moscow |
-|------------------+--------------------+-------------------------------------|
-| [[*OpenACS listen port][OACS_LISTEN_PORT]] | 8080               | Set http listen port, example 8080  |
-|------------------+--------------------+-------------------------------------|
-| [[*NaviServer configuration file][NS_CONF]]          | openacs_config.tcl | Configuration file for NaviServer   |
-|------------------+--------------------+-------------------------------------|
-| [[*NaviServer variable file][NS_VARS]]          | config_vars.tcl    | Variable file for NaviServer        |
-|------------------+--------------------+-------------------------------------|
-| [[*Database hostname][DB_HOST]]          | postgres           | Database host name                  |
-|------------------+--------------------+-------------------------------------|
-| [[*Database username][DB_USER]]          | openacs            | Database user name                  |
-|------------------+--------------------+-------------------------------------|
-| [[*Database password][DB_PASS]]          | testing            | Database user password              |
-|------------------+--------------------+-------------------------------------|
-| [[#postgres-tag][POSTGRES_TAG]]     | 14.1-alpine        | Postgres image tag                  |
-|------------------+--------------------+-------------------------------------|
+|---------------------+--------------------+-------------------------------------------|
+| Option              | Default            | Description                               |
+|---------------------+--------------------+-------------------------------------------|
+| NS_CONF             | openacs-config.tcl | Full path to configuration file           |
+| oacs_db_host*       | ${PGHOST}          | Set database host for OpenACS             |
+| oacs_db_name*       | ${PGDATABASE}      | Set database name for OpenACS             |
+| oacs_db_passwod*    | ${PGPASSWORD}      | Set db user password for OpenACS          |
+| oacs_db_port*       | ${PGPORT}          | Set database port for OpenACS             |
+| oacs_db_user*       | ${PGUSER}          | Set database user for OpenACS             |
+| oacs_httpport*      | 8000               | Set listen port for OpenACS               |
+| OACS_IMAGE_NAME     | openacs            | Set OpenACS image name                    |
+| OACS_IMAGE_TAG      | oacs-5-10          | Set OpenACS image tag                     |
+| oacs_ipaddress*     | 0.0.0.0            | Set listen address for OpenACS            |
+| OACS_LISTEN_PORT    | 8080               | Set http listen port, example 8080        |
+| OACS_REPOSITORY     | oupfiz5            | Set OpenACS repository name               |
+| PGDATABASE          | openacs            | Database name                             |
+| PGHOST              | postgres           | Database host name                        |
+| PGPASWORD           | testing            | Database user password                    |
+| PGPORT              | 5432               | Database port                             |
+| PGUSER              | openacs            | Database user name                        |
+| POSTGRES_DB         | ${PGDATABASE}      | Set postgres db name for docker image     |
+| POSTGRES_PASSWORD   | ${PGPASSWORD}      | Set postgres db password for docker image |
+| POSTGRES_USER       | ${PGUSER}          | Set postgres db user for docker image     |
+| POSTGRES_REPOSITORY | postgres           | Set default postgres repository           |
+| POSTGRES_TAG        | 14.1-alpine        | Set default postgres tag                  |
+| TZ                  | UTC                | Set timezone, example Europe/Moscow       |
+|---------------------+--------------------+-------------------------------------------|
+ * setting these variables as environment variables with the "oacs_" prefix (suitable for e.g. docker setups for =defaultConfig= in NS_CONF ([[https://bitbucket.org/naviserver/naviserver/commits/f9a919f8cb39fdf3b25fac67f5fde69f27c2a83a][see naviserver commit]]).
 
 All options have predifined values and store in file =.env= .
-** Timezone
+
+** oacs_* variables
 :PROPERTIES:
-:CUSTOM_ID: timezone
+:CUSTOM_ID: oacs---variables
 :END:
-Set the timezone for the containers, defaults to UTC. To set the timezone set the desired timezone with the variable TZ.
-#+begin_src sh :tangle no :noweb yes :dir ../src/
-  TZ="Europe/Moscow" docker-compose up
+Setting these variables as environment variables with the "oacs_" prefix (suitable for e.g. docker setups for =defaultConfig= in NS_CONF ([[https://bitbucket.org/naviserver/naviserver/commits/f9a919f8cb39fdf3b25fac67f5fde69f27c2a83a][see naviserver commit]]).
+Code example from NaviServer configuration file is:
+#+begin_src tcl :tangle no :noweb yes
+  ...
+  # All default variables in defaultConfig can be overloaded by
+  # 1) setting these variables in this file (highest precedence)
+  # 2) setting these variables as environment variables with
+  #    the "oacs_" prefix (suitable for e.g. docker setups)
+  # 3) set the variables from the default values.
+  #
+  set defaultConfig {
+      hostname	localhost
+      ipaddress	127.0.0.1
+      httpport	8000
+      httpsport	""
+
+      server     "openacs"
+      serverroot	/var/www/$server
+      logroot	$serverroot/log/
+      homedir	/usr/local/ns
+      bindir	$homedir/bin
+      db_name	$server
+      db_user	$server
+      db_host	localhost
+      db_port	""
+      db_password	"testing"
+  }
+...
 #+end_src
 
+Environment variables from .env file are:
+#+begin_src sh :tangle no :noweb yes
+  ...
+  oacs_httpport='8000'
+  oacs_db_user="${PGUSER}"
+  oacs_db_passwod="${PGPASSWORD}"
+  oacs_db_name="${PGDATABASE}"
+  oacs_db_host="${PGHOST}"
+  oacs_db_port="${PGPORT}"
+  oacs_ipaddress='0.0.0.0'
+  ...
+#+end_src
 ** OpenACS listen port
 :PROPERTIES:
 :CUSTOM_ID: openacs-listen-port
@@ -282,7 +346,14 @@ Set the timezone for the containers, defaults to UTC. To set the timezone set th
 #+begin_src sh :tangle no :noweb yes :dir ../src/
   OACS_LISTEN_PORT=8070 docker-compose up
 #+end_src
-
+** OpenACS docker image
+:PROPERTIES:
+:CUSTOM_ID: openacs-docker-image
+:END:
+Docker-compose uses the following variables for pulling OpenACS image from docker hub:
+- OACS_REPOSITORY
+- OACS_IMAGE_NAME
+- OACS_IMAGE_TAG
 ** NaviServer configuration file
 :PROPERTIES:
 :CUSTOM_ID: naviserver-configuration-file
@@ -291,46 +362,49 @@ Set the timezone for the containers, defaults to UTC. To set the timezone set th
 1. Put the configuration file to =rootfs/usr/local/ns/conf=
 2. Run docker compose
   #+begin_src sh :tangle no :noweb yes :dir ../src/
-  NS_CONF="/usr/local/ns/conf/my-config.tcl" docker-compose up
+   NS_CONF="/usr/local/ns/conf/my-config.tcl" docker-compose up
   #+end_src
-** NaviServer variable file
+** PostgreSQL docker image
 :PROPERTIES:
-:CUSTOM_ID: naviserver-variable-file
+:CUSTOM_ID: postgresql-docker-image
 :END:
-=NS_VARS= - - configuration file. This configuration file contains several parameters which are frequently changed (e.g. for debug or other configurations). The provided NaviServer configuation file reads the variable file and uses its values.  Default value is =/usr/local/ns/conf/config_vars.tcl=
-1. Put the configuration file to =rootfs/usr/local/ns/conf=
-2. Run docker compose
-  #+begin_src sh :tangle no :noweb yes :dir ../src/
-    NS_VARS="/usr/local/ns/conf/my_vars.tcl" docker-compose up
-  #+end_src
+Docker-compose uses the following variables for pulling postgres image from docker hub:
+- POSTGRES_REPOSITORY
+- POSTGRES_TAG
 
 ** Database hostname
 :PROPERTIES:
 :CUSTOM_ID: database-hostname
 :END:
-=DB_HOST= set the database hostname for the openacs. By default it has name of docker-compose database  service - postgres.
+=PGHOST= set the database hostname for the openacs. By default it has name of docker-compose database  service - postgres.
   #+begin_src sh :tangle no :noweb yes :dir ../src/
-  DB_HOST=foo docker-compose up
+  PGHOST=foo docker-compose up
+  #+end_src
+** Database name
+:PROPERTIES:
+:CUSTOM_ID: database-name
+:END:
+=PGDATABASE= set the database name for the openacs. By default it has name of docker-compose database  service - openacs.
+  #+begin_src sh :tangle no :noweb yes :dir ../src/
+  PGDATABASE=foo docker-compose up
   #+end_src
 
 ** Database username
 :PROPERTIES:
 :CUSTOM_ID: database-username
 :END:
-=DB_USER= set the database username for the openacs and postgres.
+=PGUSER= set the database username for the openacs and postgres.
   #+begin_src sh :tangle no :noweb yes :dir ../src/
-    DB_USER=foouser docker-compose up
+    PGUSER=foouser docker-compose up
   #+end_src
-
 ** Database password
 :PROPERTIES:
 :CUSTOM_ID: database-password
 :END:
-=DB_PASS= set the database user password for the openacs and postgres.
+=PGPASSWORD= set the database user password for the openacs and postgres.
   #+begin_src sh :tangle no :noweb yes :dir ../src/
-    DB_PASS=foopass docker-compose up
+    PGPASSWORD=foopass docker-compose up
   #+end_src
-
 ** Postgres tag
 :PROPERTIES:
 :CUSTOM_ID: postgres-tag
@@ -339,6 +413,14 @@ Set the timezone for the containers, defaults to UTC. To set the timezone set th
   #+begin_src sh :tangle no :noweb yes :dir ../src/
     POSTGRES_TAG="14.1-alpine" docker-compose up
   #+end_src
+** Timezone
+:PROPERTIES:
+:CUSTOM_ID: timezone
+:END:
+Set the timezone for the containers, defaults to UTC. To set the timezone set the desired timezone with the variable TZ. Useful for setup correct time in logging.
+#+begin_src sh :tangle no :noweb yes :dir ../src/
+  TZ="Europe/Moscow" docker-compose up
+#+end_src
 
 * CI/CD
 :PROPERTIES:
@@ -371,15 +453,14 @@ For debugging and maintenance purposes you may want access the containers shell.
 :CUSTOM_ID: versions
 :END:
 #+begin_src sh :shebang ""
-  CONTAINER_NAME='openacs'
-  NS_IMAGE_REPOSITORY='oupfiz5'
-  NS_IMAGE_NAME='naviserver'
-  NS_IMAGE_TAG='4.99.23'
-  IMAGE_NAME='openacs'
-  IMAGE_REPOSITORY='oupfiz5'
-  IMAGE_TAG='oacs-5-10'
-  OACS_IMG_TAG='oacs-5-10-1'
-  OACS_TAG='oacs-5-10'
+  CONTAINER_NAME="${CONTAINER_NAME:-openacs}"
+  NS_IMAGE_REPOSITORY="${NS_IMAGE_REPOSITORY:-oupfiz5}"
+  NS_IMAGE_NAME="${NS_IMAGE_NAME:-naviserver}"
+  NS_IMAGE_TAG="${NS_IMAGE_TAG:-20.04-4.99.23}"
+  IMAGE_NAME="${IMAGE_NAME:-openacs}"
+  IMAGE_REPOSITORY="${IMAGE_REPOSITORY:-oupfiz5}"
+  IMAGE_TAG="${IMAGE_TAG:-oacs-5-10}"
+  OACS_TAG="${OACS_TAG:-oacs-5-10}"
 #+end_src
 ** ../.fossil-settings/crlf-glob :code:
 :PROPERTIES:
@@ -533,7 +614,6 @@ For debugging and maintenance purposes you may want access the containers shell.
           run: |
             echo "::group::Build image"
             set -a; source ${GITHUB_WORKSPACE}/src/VERSIONS ; set +a;
-            export IMAGE="${IMAGE:-${IMAGE_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}}"
             echo "Build image"
             cd ${GITHUB_WORKSPACE}/src/hook
             ./build.sh
@@ -579,7 +659,7 @@ Trigger: 2
   FROM ${NS_IMAGE_REPOSITORY}/${NS_IMAGE_NAME}:${NS_IMAGE_TAG}
 
   # * Environment
-  ENV NS_CONF="/usr/local/ns/conf/openacs_config.tcl"
+  ENV NS_CONF="/usr/local/ns/conf/openacs-config.tcl"
 
   ARG \
       BUILD_DATE="${BUILD_DATE}" \
@@ -631,8 +711,7 @@ Trigger: 2
       rm /tmp/openacs-bootstrap3-theme-"${OACS_TAG}".tar.gz
 
   # ** Copy openacs configuration files
-  COPY rootfs/usr/local/ns/conf/openacs_config.tcl /usr/local/ns/conf/openacs_config.tcl
-  COPY rootfs/usr/local/ns/conf/config_vars.tcl /usr/local/ns/conf/config_vars.tcl
+  COPY rootfs/usr/local/ns/conf/openacs-config.tcl /usr/local/ns/conf/openacs-config.tcl
   COPY rootfs/var/www/openacs/www/SYSTEM/openacs-test.tcl /var/www/openacs/www/SYSTEM/openacs-test.tcl
 
   # ** Install and configure extra OpenACS packages
@@ -650,7 +729,7 @@ Trigger: 2
   ENTRYPOINT ["/run_openacs.sh"]
 
   # ** Cmd
-  CMD [ "/usr/local/ns/conf/openacs_config.tcl"]
+  CMD [ "/usr/local/ns/conf/openacs-config.tcl"]
 #+end_src
 ** rootfs/run_openacs.sh :code:
 :PROPERTIES:
@@ -658,10 +737,10 @@ Trigger: 2
 :END:
 #+begin_src sh :shebang "" :tangle-mode (identity #o755)
   #!/bin/bash
-  _CONF="${1:-'/usr/local/ns/conf/openacs_config.tcl'}"
+  _CONF="${1:-'/usr/local/ns/conf/openacs-config.tcl'}"
 
 
-  until PGPASSWORD="${DB_PASS}" pg_isready -h "${DB_HOST}" -U "${DB_USER}"; do
+  until PGPASSWORD="${PGPASSWORD}" pg_isready -h "${PGHOST}" -U "${PGUSER}"; do
       >&2 echo "Postgres db is unavailable - sleeping"
       sleep 1
   done
@@ -670,7 +749,7 @@ Trigger: 2
   /usr/local/ns/bin/nsd -f -u nsadmin -g nsadmin -t "${_CONF}"
 #+end_src
 
-** rootfs/usr/local/ns/conf/openacs_config.tcl :code:
+** rootfs/usr/local/ns/conf/openacs-config.tcl :code:
 :PROPERTIES:
 :CUSTOM_ID: rootfs-usr-local-ns-conf-openacs-config-tcl
 :END:
@@ -684,111 +763,81 @@ Trigger: 2
   # Two servers with default settings cannot run on the same host
   #
   ######################################################################
-  ns_log notice "nsd.tcl: starting to read config file..."
+  ns_log notice "nsd.tcl: starting to read configuration file..."
 
   #---------------------------------------------------------------------
-  # Change the HTTP and HTTPS port to e.g. 80 and 443 for production use.
-
-  # source /usr/local/ns/conf/config_vars.tcl
-  source $::env(NS_VARS)
-
-  switch $httpport {
-          443 - 8443 {
-          set httpsport $httpport
-          }
-  }
-
+  # Port settings:
+  #    Change the HTTP and HTTPS port to e.g. 80 and 443 for production
+  #    use.  Setting the HTTPS port to 0 means to active the https
+  #    driver for ns_http, but do not listen on this port.
   #
-  # Setting the HTTPS port to 0 means to active the https driver for
-  # ns_http, but do not listen on this port.
-  #
-  #set httpsport		0
-  #set httpsport		8443
-
-  # The hostname and address should be set to actual values.
-  # setting the address to 0.0.0.0 means AOLserver listens on all interfaces
-
-  #set address_v4		127.0.0.1  ;# listen on loopback via IPv4
-  set address_v4		0.0.0.0    ;# listen on all IPv4 addresses
-  #set address_v6		::1        ;# listen on loopback via IPv6
-  #set address_v6		::0        ;# listen on all IPv6 addresses
-
   # Note: If port is privileged (usually < 1024), OpenACS must be
-  # started by root, and the run script must contain the flag
-  # '-b address:port' which matches the address and port
-  # as specified above.
+  # started by root, and the run script must contain the flag '-b
+  # address:port' which matches the address and port as specified below.
+  #
+  #     httpsport		0
+  #     httpsport		8443
+  #
+  # The "hostname" and "ipaddress" should be set to actual values such
+  # that the server is reachable over the Internet. The default values
+  # are fine for testing purposes. One can specify for the "ipaddress"
+  # also multiple values (e.g. IPv4 and IPv6).
+  #
+  #    hostname		localhost
+  #    ipaddress		127.0.0.1  ;# listen on loopback via IPv4
+  #    ipaddress		0.0.0.0    ;# listen on all IPv4 addresses
+  #    ipaddress        ::1        ;# listen on loopback via IPv6
+  #    ipaddress		::0        ;# listen on all IPv6 addresses
 
-  set server "openacs"
+  # All default variables in defaultConfig can be overloaded by
+  # 1) setting these variables in this file (highest precedence)
+  # 2) setting these variables as environment variables with
+  #    the "oacs_" prefix (suitable for e.g. docker setups)
+  # 3) set the variables from the default values.
+  #
+  set defaultConfig {
+      hostname	localhost
+      ipaddress	127.0.0.1
+      httpport	8000
+      httpsport	""
+
+      server     "openacs"
+      serverroot	/var/www/$server
+      logroot	$serverroot/log/
+      homedir	/usr/local/ns
+      bindir	$homedir/bin
+      db_name	$server
+      db_user	$server
+      db_host	localhost
+      db_port	""
+      db_password	"testing"
+  }
 
   set servername		"New OpenACS Installation - Development"
 
-  set logroot		$serverroot/log
-
-  set homedir		/usr/local/ns
-
-  set bindir		$homedir/bin
-
   # Are we running behind a proxy?
-  set proxy_mode		$proxy_mode
+  set proxy_mode		false
 
   #---------------------------------------------------------------------
   # Which database do you want? PostgreSQL or Oracle?
   set database              postgres
 
-  # set db_name openacs
-  set db_name $::env(DB_NAME)
-
   if { $database eq "oracle" } {
       set db_password           "mysitepassword"
-  } else {
-      # set db_host               postgres
-      set db_host               $::env(DB_HOST)
-      set db_port               "5432"
-
-      # set db_user               [exec cat /run/secrets/psql_user]
-      # set db_user               openacs
-      set db_user               $::env(DB_USER)
-      if {$db_user eq ""} {
-          set db_user $server
-      }
-
-      # set db_password           [exec cat /run/secrets/psql_password]
-      # set db_password           testing
-      set db_password           $::env(DB_PASS)
-      if {$db_password eq ""} {
-          set db_password           testing
-      }
   }
 
   #---------------------------------------------------------------------
   # If debug is false, all debugging will be turned off.
-  if {$develop_p} {
-      set debug true
-      set dev true
-      set verboseSQL true
-  } else {
-      set debug false
-      set dev false
-      set verboseSQL false
-  }
-
-  if {$staging_p} {
-      set debug true
-  }
+  set debug false
+  set dev   false
+  set verboseSQL false
 
   set max_file_upload_mb        20
   set max_file_upload_min        5
 
   #---------------------------------------------------------------------
-  # Set environment variables HOME and LANG. HOME is needed since
-  # otherwise some programs called via exec might try to write into the
-  # root home directory.
-  #
-  set env(HOME) $homedir
-  set env(LANG) en_US.UTF-8
-
-  #---------------------------------------------------------------------
-  # Set headers that should be included in every reply from the server
+  # Set headers that should be included in every response from the
+  # server.
   #
   set nssock_extraheaders {
       X-Frame-Options            "SAMEORIGIN"
@@ -809,14 +858,23 @@ Trigger: 2
   # Nothing below this point need be changed in a default install.
   #
   ######################################################################
+  #
+  # For all potential variables, allow environment variables such as
+  # "oacs_httpport" or "oacs_ipaddress" to override local values.
+  #
+  source [file dirname [ns_info nsd]]/../tcl/init.tcl
+  ns_configure_variables "oacs_" $defaultConfig
+
+  #---------------------------------------------------------------------
+  # Set environment variables HOME and LANG. HOME is needed since
+  # otherwise some programs called via exec might try to write into the
+  # root home directory.
+  #
+  set env(HOME) $homedir
+  set env(LANG) en_US.UTF-8
 
 
   ns_logctl severity "Debug(ns:driver)" $debug
-
-  set addresses {}
-  set suffixes {}
-  if {[info exists address_v4]} {lappend addresses $address_v4; lappend suffixes v4}
-  if {[info exists address_v6]} {lappend addresses $address_v6; lappend suffixes v6}
 
   #---------------------------------------------------------------------
   #
@@ -841,7 +899,13 @@ Trigger: 2
       # specified either, a system specific constant us used
       # (compile time macro P_tmpdir)
       #
-      # ns_param        tmpdir          c:/tmp
+      # ns_param        tmpdir    c:/tmp
+
+      # Timeout for shutdown to let existing connections and background
+      # jobs finish.  When this time limit is exceeded the server shuts
+      # down immediately.
+      #
+      # ns_param    shutdowntimeout 20s      ;# 20s is the default
 
       #
       # Configuration of error.log
@@ -849,24 +913,31 @@ Trigger: 2
       # Rolling of logfile:
       ns_param	logroll		on
       ns_param	logmaxbackup	100      ;# 10 is default
-      ns_param	logrollfmt	%Y-%m-%d ;# format appended to serverlog file name when rolled
+      ns_param	logrollfmt	%Y-%m-%d ;# format appended to serverlog filename when rolled
       #
-      # Format of log entries:
+      # Format of log entries in serverlog:
+      # ns_param  logsec          false    ;# add timestamps in second resolution (default: true)
       # ns_param  logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
       # ns_param  logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
+      # ns_param  logthread       false    ;# add thread-info the log file lines (default: true)
       ns_param	logcolorize	true     ;# colorize log file with ANSI colors (default: false)
       ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
       # ns_param  logprefixintensity normal;# bright or normal
       #
       # Severities to be logged (can be controlled at runtime via ns_logctl)
-      ns_param	logdebug	$debug    ;# debug messages
+      #ns_param	logdebug	$debug    ;# debug messages
       ns_param	logdev		$dev      ;# development message
       ns_param    lognotice       true      ;# informational messages
+      #ns_param   sanitizelogfiles 2        ;# default: 2; 0: none, 1: full, 2: human-friendly
 
-      # ns_param	mailhost	localhost
-      # ns_param	jobsperthread	0
-      # ns_param	jobtimeout	300
-      # ns_param	schedsperthread	0
+      # ns_param	mailhost            localhost
+
+      # ns_param	jobsperthread       0     ;# number of ns_jobs before thread exits
+      # ns_param	jobtimeout          5m    ;# default "ns_job wait" timeout
+      # ns_param	joblogminduration   1s    ;# default: 1s
+
+      # ns_param	schedsperthread     0     ;# number of scheduled jobs before thread exits
+      # ns_param	schedlogminduration 2s    ;# print warnings when scheduled job takes longer than that
 
       # Write asynchronously to log files (access log and error log)
       # ns_param	asynclogwriter	true		;# false
@@ -880,14 +951,14 @@ Trigger: 2
       # Versions up to at least Tcl 8.5 are known that these might
       # crash in case two threads create interpreters at the same
       # time. These crashes were hard to reproduce, but serializing
-      # interpreter creation helped. Probably it is possible to
-      # allow concurrent interpreter create operations in Tcl 8.6.
-      #ns_param        concurrentinterpcreate true   ;# default: false
+      # interpreter creation helped. Starting with Tcl 8.6,
+      # the default is set to "true".
+      #ns_param        concurrentinterpcreate false   ;# default: true
 
       # Enforce sequential thread initialization. This is not really
       # desirably in general, but might be useful for hunting strange
       # crashes or for debugging with valgrind.
-      # ns_param	tclinitlock	true	       ;# default: false
+      # ns_param	tclinitlock	true           ;# default: false
 
       #
       # Encoding settings (see http://dqd.com/~mayoff/encoding-doc.html)
@@ -906,19 +977,148 @@ Trigger: 2
       # DNS configuration parameters
       #
       ns_param dnscache true          ;# default: true
-      ns_param dnswaittimeout 5       ;# time for waiting for a DNS reply in seconds; default: 5
-      ns_param keepwaittimeout 60     ;# time to keep entries in cache in minutes; default: 60
+      ns_param dnswaittimeout 5s      ;# time for waiting for a DNS reply; default: 5s
+      ns_param dnscachetimeout 1h     ;# time to keep entries in cache; default: 1h
       ns_param dnscachemaxsize 500kB  ;# max size of DNS cache in memory units; default: 500kB
 
-      # Running behind proxy? Used by OpenACS...
-      ns_param	ReverseProxyMode	$proxy_mode
+      # Running behind proxy? Used also by OpenACS...
+      ns_param reverseproxymode	$proxy_mode
   }
+
+  #---------------------------------------------------------------------
+  # Definition of NaviServer servers (add more, when true NaviServer
+  # virtual hosting should be used).
+  #---------------------------------------------------------------------
+  ns_section ns/servers {
+      ns_param $server $servername
+  }
+
+
+  #---------------------------------------------------------------------
+  # Global server modules
+  #---------------------------------------------------------------------
+  ns_section ns/modules {
+      #
+      # Load networking modules named "nssock" and/or "nsssl" depending
+      # on existence of Tcl variables "httpport" and "httpsport".
+      #
+      if {[info exists httpport] && $httpport ne ""}  { ns_param nssock ${bindir}/nssock }
+      if {[info exists httpsport] && $httpsport ne ""} { ns_param nsssl  ${bindir}/nsssl }
+  }
+
+  #---------------------------------------------------------------------
+  # Configuration for plain HTTP interface  -- module nssock
+  #---------------------------------------------------------------------
+  if {[info exists httpport]} {
+      #
+      # We have an "httpport" configured, so configure this module.
+      #
+      ns_section ns/module/nssock {
+          ns_param	defaultserver	$server
+          ns_param	address		$ipaddress
+          ns_param	hostname	$hostname
+          ns_param	port		$httpport                ;# default 80
+          ns_param	maxinput	${max_file_upload_mb}MB  ;# 1MB, maximum size for inputs (uploads)
+          ns_param	recvwait	${max_file_upload_min}m  ;# 30s, timeout for receive operations
+          # ns_param	maxline		8192	;# 8192, max size of a header line
+          # ns_param	maxheaders	128	;# 128, max number of header lines
+          # ns_param	uploadpath	/tmp	;# directory for uploads
+          # ns_param	backlog		256	;# 256, backlog for listen operations
+          # ns_param	maxqueuesize	256	;# 1024, maximum size of the queue
+          # ns_param	acceptsize	10	;# backlog; Maximum number of requests accepted at once.
+          # ns_param	deferaccept     true    ;# false, Performance optimization, may cause recvwait to be ignored
+          # ns_param	bufsize		16kB	;# 16kB, buffersize
+          # ns_param	readahead	16kB	;# value of bufsize, size of readahead for requests
+          # ns_param	sendwait	30s	;# 30s, timeout for send operations
+          # ns_param	closewait	2s	;# 2s, timeout for close on socket
+          # ns_param	keepwait	2s	;# 5s, timeout for keep-alive
+          # ns_param	nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
+          # ns_param	keepalivemaxuploadsize    500kB  ;# 0, don't allow keep-alive for upload content larger than this
+          # ns_param	keepalivemaxdownloadsize  1MB    ;# 0, don't allow keep-alive for download content larger than this
+          # ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
+          ns_param	maxupload	100kB	;# 0, when specified, spool uploads larger than this value to a temp file
+          ns_param	writerthreads	2	;# 0, number of writer threads
+          ns_param	writersize	1kB	;# 1MB, use writer threads for files larger than this value
+          # ns_param	writerbufsize	8kB	;# 8kB, buffer size for writer threads
+          # ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
+
+          #
+          # Options for port reuse (see https://lwn.net/Articles/542629/)
+          # These options require proper OS support.
+          #
+          # ns_param  reuseport       true    ;# false;  normally not needed to be set, set by driverthreads when necessary
+          # ns_param	driverthreads	2	;# 1; use multiple driver threads; activates "reuseport"
+
+          #
+          # Extra driver-specific response headers fields to be added for
+          # every request.
+          #
+          ns_param    extraheaders    $nssock_extraheaders
+      }
+      #
+      # Define, which "host" (as supplied by the "host:" header
+      # field) accepted over this driver should be associated with
+      # which server.
+      #
+      ns_section ns/module/nssock/servers {
+          ns_param $server $hostname
+          foreach address $ipaddress {
+              ns_param $server $address
+          }
+      }
+  }
+
+  #---------------------------------------------------------------------
+  # Configuration for HTTPS interface (SSL/TLS) -- module nsssl
+  #---------------------------------------------------------------------
+
+  if {[info exists httpsport]} {
+      #
+      # We have an "httpsport" configured, so configure this module.
+      #
+      ns_section ns/module/nsssl {
+          ns_param defaultserver	$server
+          ns_param address	$ipaddress
+          ns_param port		$httpsport
+          ns_param hostname	$hostname
+          ns_param ciphers	"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
+          ns_param protocols	"!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
+          ns_param certificate	$serverroot/etc/certfile.pem
+          ns_param verify		0
+          ns_param writerthreads	2
+          ns_param writersize	1kB
+          ns_param writerbufsize	16kB	;# 8kB, buffer size for writer threads
+          # ns_param writerstreaming	true	;# false
+          # ns_param spoolerthreads	1	;# 0, number of upload spooler threads
+          # ns_param maxupload	100kB	;# 0, when specified, spool uploads larger than this value to a temp file
+          # ns_param deferaccept	true    ;# false, Performance optimization
+          # ns_param nodelay	false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
+          ns_param maxinput	${max_file_upload_mb}MB   ;# Maximum file size for uploads in bytes
+          ns_param extraheaders	$nsssl_extraheaders
+          ns_param OCSPstapling   on        ;# off; activate OCSP stapling
+          # ns_param OCSPstaplingVerbose  on ;# off; make OCSP stapling more verbose
+      }
+      #
+      # Define, which "host" (as supplied by the "host:" header field)
+      # accepted over this driver should be associated with which
+      # server. This parameter is for virtual servers. Here we just
+      # register the $hostname and the $address (in case, the server is
+      # addressed via its IP address).
+      #
+      ns_section ns/module/nsssl/servers {
+          ns_param $server $hostname
+          foreach address $ipaddress {
+              ns_param $server $address
+          }
+      }
+  }
+
 
   #---------------------------------------------------------------------
   # Thread library (nsthread) parameters
   #---------------------------------------------------------------------
   ns_section ns/threads {
-      ns_param	stacksize	[expr {2*1024*1024}]
+      ns_param	stacksize	1MB
   }
   #---------------------------------------------------------------------
   # Extra mime types
@@ -928,8 +1128,8 @@ Trigger: 2
       #  see: /usr/local/src/naviserver/nsd/mimetypes.c
       #  but in case something is missing you can add it here.
 
-      #ns_param	Default		*/*
-      #ns_param	NoExtension	*/*
+      #ns_param	default		*/*
+      #ns_param	noextension	text/html
       #ns_param	.pcd		image/x-photo-cd
       #ns_param	.prc		application/x-pilot
   }
@@ -937,7 +1137,7 @@ Trigger: 2
   #---------------------------------------------------------------------
   # Global fastpath parameters
   #---------------------------------------------------------------------
-  ns_section      "ns/fastpath" {
+  ns_section ns/fastpath {
       #ns_param        cache               true       ;# default: false
       #ns_param        cachemaxsize        10MB       ;# default: 10MB
       #ns_param        cachemaxentry       100kB      ;# default: 8kB
@@ -962,57 +1162,143 @@ Trigger: 2
   #  Other host-specific values are set up above as Tcl variables, too.
   #
   #---------------------------------------------------------------------
-  ns_section ns/servers {
-      ns_param $server		$servername
-  }
-
   #
   # Server parameters
   #
-  ns_section ns/server/${server} {
+  ns_section ns/server/$server {
       #
       # Scaling and Tuning Options
       #
-      # ns_param	maxconnections	100	;# 100; number of allocated connection structures
-      # ns_param	maxthreads	10	;# 10; maximal number of connection threads
-      ns_param	minthreads	2	;# 1; minimal number of connection threads
+      # ns_param	maxconnections	100      ;# 100; number of allocated connection structures
+      ns_param    rejectoverrun   true     ;# false (send 503 when queue overruns)
+      #ns_param   retryafter      5s       ;# time for Retry-After in 503 cases
+      #ns_param   filterrwlocks   false    ;# default: true
 
-      ns_param	connsperthread	1000	;# 10000; number of connections (requests) handled per thread
+      # ns_param	maxthreads	10       ;# 10; maximal number of connection threads
+      ns_param	minthreads	2        ;# 1; minimal number of connection threads
+
+      ns_param	connsperthread	1000     ;# 10000; number of connections (requests) handled per thread
       ;# Setting connsperthread to > 0 will cause the thread to
-      ;# graciously exit, after processing that many
-      ;# requests, thus initiating kind-of Tcl-level
-      ;# garbage collection.
+      ;# graciously exit, after processing that many requests, thus
+      ;# initiating kind-of Tcl-level garbage collection.
 
-      # ns_param	threadtimeout	120	;# 120; timeout for idle threads.
-      ;# In case, minthreads < maxthreads, threads
-      ;# are shutdown after this idle time until
-      ;# minthreads are reached.
+      # ns_param	threadtimeout	2m       ;# 2m; timeout for idle threads.
+      ;# In case, minthreads < maxthreads, threads are shutdown after
+      ;# this idle time until minthreads are reached.
 
-      # ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
-      ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
-      ;# 100 means to disable concurrent creates
+      # ns_param	lowwatermark	10       ;# 10; create additional threads above this queue-full percentage
+      ns_param	highwatermark	100      ;# 80; allow concurrent creates above this queue-is percentage
+                                           ;# 100 means to disable concurrent creates
+      #ns_param    connectionratelimit 200 ;# 0; limit rate per connection to this amount (KB/s); 0 means unlimited
+      #ns_param    poolratelimit   200     ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
 
       # Compress response character data: ns_return, ADP etc.
       #
-      ns_param	compressenable	on	;# false, use "ns_conn compress" to override
-      # ns_param	compresslevel	4	;# 4, 1-9 where 9 is high compression, high overhead
-      # ns_param	compressminsize	512	;# Compress responses larger than this
-      # ns_param	compresspreinit true	;# false, if true then initialize and allocate buffers at startup
+      ns_param	compressenable	on       ;# false, use "ns_conn compress" to override
+      # ns_param	compresslevel	4        ;# 4, 1-9 where 9 is high compression, high overhead
+      # ns_param	compressminsize	512      ;# Compress responses larger than this
+      # ns_param	compresspreinit true     ;# false, if true then initialize and allocate buffers at startup
+
+      # Enable nicer directory listing (as handled by the OpenACS request processor)
+      # ns_param	directorylisting	fancy	;# Can be simple or fancy
 
       #
       # Configuration of replies
       #
       # ns_param	realm		yourrealm	;# Default realm for Basic authentication
-      # ns_param	noticedetail	false	;# true, return detail information in server reply
-      # ns_param	errorminsize	0	;# 514, fill-up reply to at least specified bytes (for ?early? MSIE)
-      # ns_param	headercase	preserve;# preserve, might be "tolower" or "toupper"
+      # ns_param	noticedetail	false		;# true, return detail information in server reply
+      # ns_param	errorminsize	0		;# 514, fill-up reply to at least specified bytes (for ?early? MSIE)
+      # ns_param	headercase	preserve	;# preserve, might be "tolower" or "toupper"
       # ns_param	checkmodifiedsince	false	;# true, check modified-since before returning files from cache. Disable for speedup
+
+      #
+      # Extra server-specific response headers fields to be added for
+      # every response on this server
+      #
+      #ns_param    extraheaders    {...}
   }
+
+  ########################################################################
+  # Connection thread pools.
+  #
+  #  Per default, NaviServer uses a "default" connection pool, which
+  #  needs no extra configuration.  Optionally, multiple connection
+  #  thread pools can be configured using the following parameters.
+  #
+  #       map
+  #       connsperthread
+  #       highwatermark
+  #       lowwatermark
+  #       maxconnections
+  #       rejectoverrun
+  #       retryafter
+  #       maxthreads
+  #       minthreads
+  #       poolratelimit
+  #       connectionratelimit
+  #       threadtimeout
+  #
+  # In order to define thread pools, do the following:
+  #
+  #  1. Add pool names to "ns/server/$server/pools"
+  #  2. Configure pools with the noted parameters
+  #  3. Map method/URL combinations for these pools
+  #
+  #  All unmapped method/URL's will go to the default server pool of the
+  #  server.
+  #
+  ########################################################################
+
+  ns_section ns/server/$server/pools {
+      #
+      # To activate connection thread pools, uncomment one of the
+      # following lines and/or add other pools.
+
+      #ns_param   monitor	"Monitoring actions to check healthiness of the system"
+      #ns_param   fast	"Fast requests, e.g. less than 10ms"
+      #ns_param   slow    "Slow lane pool, for request remapping"
+  }
+
+  ns_section ns/server/$server/pool/monitor {
+      ns_param   minthreads 2
+      ns_param   maxthreads 2
+
+      ns_param   map "GET /SYSTEM"
+      ns_param   map "GET /admin/nsstats"
+      ns_param   map "GET /ds"
+      ns_param   map "GET /request-monitor"
+      ns_param   map "POST /SYSTEM"
+      ns_param   map "POST /admin/nsstats"
+      ns_param   map "POST /ds"
+  }
+
+  ns_section ns/server/$server/pool/fast {
+      ns_param   minthreads 2
+      ns_param   maxthreads 2
+      ns_param   rejectoverrun true
+
+      ns_param   map "GET /*.png"
+      ns_param   map "GET /*.PNG"
+      ns_param   map "GET /*.jpg"
+      ns_param   map "GET /*.pdf"
+      ns_param   map "GET /*.gif"
+      ns_param   map "GET /*.mp4"
+      ns_param   map "GET /*.ts"
+      ns_param   map "GET /*.m3u8"
+  }
+
+  ns_section ns/server/$server/pool/slow {
+      ns_param   minthreads 2
+      ns_param   maxthreads 5
+      ns_param   maxconnections 600
+      ns_param   rejectoverrun true
+  }
+
 
   #---------------------------------------------------------------------
   # Special HTTP pages
   #---------------------------------------------------------------------
-  ns_section ns/server/${server}/redirects {
+  ns_section ns/server/$server/redirects {
       ns_param   404 /shared/404
       ns_param   403 /shared/403
       ns_param   503 /shared/503
@@ -1022,7 +1308,7 @@ Trigger: 2
   #---------------------------------------------------------------------
   # ADP (AOLserver Dynamic Page) configuration
   #---------------------------------------------------------------------
-  ns_section ns/server/${server}/adp {
+  ns_section ns/server/$server/adp {
       ns_param	enabledebug	$debug
       ns_param	map		/*.adp		;# Extensions to parse as ADP's
       # ns_param	map		"/*.html"	;# Any extension can be mapped
@@ -1050,21 +1336,21 @@ Trigger: 2
       #
   }
 
-  ns_section ns/server/${server}/adp/parsers {
+  ns_section ns/server/$server/adp/parsers {
       ns_param	fancy		".adp"
   }
 
   #
   # Tcl Configuration
   #
-  ns_section ns/server/${server}/tcl {
+  ns_section ns/server/$server/tcl {
       ns_param	library		${serverroot}/tcl
-      ns_param	autoclose	on
       ns_param	debug		$debug
       # ns_param	nsvbuckets	16       ;# default: 8
+      # ns_param	nsvrwlocks      false    ;# default: true
   }
 
-  ns_section "ns/server/${server}/fastpath" {
+  ns_section ns/server/$server/fastpath {
       ns_param	serverdir	${homedir}
       ns_param	pagedir		${pageroot}
       #
@@ -1076,13 +1362,27 @@ Trigger: 2
       # ns_param	directorylisting	fancy                 ;# Can be simple or fancy
       #
   }
+
+  #---------------------------------------------------------------------
+  # HTTP client configuration
+  #---------------------------------------------------------------------
+  ns_section ns/server/$server/httpclient {
+      ns_param	logging		on ;# default: off
+      ns_param	logfile		${logroot}/httpclient.log
+      ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
+      #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
+      #ns_param	logroll		true     ;# true, should server log files automatically
+      #ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
+      #ns_param	logrollhour	0        ;# 0, specify at which hour to roll
+  }
+
   #---------------------------------------------------------------------
   # OpenACS specific settings (per server)
   #---------------------------------------------------------------------
   #
   # Define/override kernel parameters in section /acs
   #
-  ns_section ns/server/${server}/acs {
+  ns_section ns/server/$server/acs {
       ns_param NsShutdownWithNonZeroExitCode 1
       # ns_param WithDeprecatedCode 0
       # ns_param LogIncludeUserId 1
@@ -1094,7 +1394,7 @@ Trigger: 2
   #
   # Provide tailored sizes for the site node cache in acs-tcl:
   #
-  ns_section ns/server/${server}/acs/acs-tcl {
+  ns_section ns/server/$server/acs/acs-tcl {
       # ns_param SiteNodesCacheSize        2000000
       # ns_param SiteNodesIdCacheSize       100000
       # ns_param SiteNodesChildenCacheSize  100000
@@ -1107,7 +1407,7 @@ Trigger: 2
   # EmailDeliveryMode. Setting this to "log" is useful for developer
   # instances.
   #
-  ns_section ns/server/${server}/acs/acs-mail-lite {
+  ns_section ns/server/$server/acs/acs-mail-lite {
       # ns_param EmailDeliveryMode log
   }
 
@@ -1115,86 +1415,41 @@ Trigger: 2
   # API browser configuration: setting IncludeCallingInfo to "true" is
   # useful mostly for developer instances.
   #
-  ns_section ns/server/${server}/acs/acs-api-browser {
+  ns_section ns/server/$server/acs/acs-api-browser {
       # ns_param IncludeCallingInfo true
   }
 
   #---------------------------------------------------------------------
   # WebDAV Support (optional, requires oacs-dav package to be installed
   #---------------------------------------------------------------------
-  ns_section ns/server/${server}/tdav {
-      ns_param	propdir		   ${serverroot}/data/dav/properties
-      ns_param	lockdir		   ${serverroot}/data/dav/locks
+  ns_section ns/server/$server/tdav {
+      ns_param	propdir            ${serverroot}/data/dav/properties
+      ns_param	lockdir            ${serverroot}/data/dav/locks
       ns_param	defaultlocktimeout 300
   }
 
-  ns_section ns/server/${server}/tdav/shares {
+  ns_section ns/server/$server/tdav/shares {
       ns_param	share1		"OpenACS"
       # ns_param	share2		"Share 2 description"
   }
 
-  ns_section ns/server/${server}/tdav/share/share1 {
+  ns_section ns/server/$server/tdav/share/share1 {
       ns_param	uri		"/dav/*"
       # all WebDAV options
       ns_param	options		"OPTIONS COPY GET PUT MOVE DELETE HEAD MKCOL POST PROPFIND PROPPATCH LOCK UNLOCK"
   }
 
-  #ns_section ns/server/${server}/tdav/share/share2 {
+  #ns_section ns/server/$server/tdav/share/share2 {
   # ns_param	uri "/share2/path/*"
   # read-only WebDAV options
   # ns_param options "OPTIONS COPY GET HEAD MKCOL POST PROPFIND PROPPATCH"
   #}
 
-  #---------------------------------------------------------------------
-  # Socket driver module (HTTP)  -- nssock
-  #---------------------------------------------------------------------
-  foreach address $addresses suffix $suffixes {
-      ns_section ns/server/${server}/module/nssock_$suffix
-      ns_param	address		$address
-      ns_param	hostname	$hostname
-      ns_param	port		$httpport	;# 80 or 443
-      ns_param	maxinput	"$max_file_upload_mb MB";   # 1MB, maximum size for inputs (uploads)
-      ns_param	recvwait	[expr {$max_file_upload_min * 60}] ;# 30, timeout for receive operations
-      # ns_param	maxline		8192	;# 8192, max size of a header line
-      # ns_param	maxheaders	128	;# 128, max number of header lines
-      # ns_param	uploadpath	/tmp	;# directory for uploads
-      # ns_param	backlog		256	;# 256, backlog for listen operations
-      # ns_param	maxqueuesize	256	;# 1024, maximum size of the queue
-      # ns_param	acceptsize	10	;# Maximum number of requests accepted at once.
-      # ns_param	deferaccept     true    ;# false, Performance optimization, may cause recvwait to be ignored
-      # ns_param	bufsize		16kB	;# 16kB, buffersize
-      # ns_param	readahead	16kB	;# value of bufsize, size of readahead for requests
-      # ns_param	sendwait	30	;# 30, timeout in seconds for send operations
-      # ns_param	closewait	2	;# 2, timeout in seconds for close on socket
-      # ns_param	keepwait	2	;# 5, timeout in seconds for keep-alive
-      # ns_param  nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
-      # ns_param	keepalivemaxuploadsize	  500kB  ;# 0, don't allow keep-alive for upload content larger than this
-      # ns_param	keepalivemaxdownloadsize  1MB    ;# 0, don't allow keep-alive for download content larger than this
-      # ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
-      ns_param	maxupload	100kB	;# 0, when specified, spool uploads larger than this value to a temp file
-      ns_param	writerthreads	2	;# 0, number of writer threads
-      ns_param	writersize	1kB	;# 1MB, use writer threads for files larger than this value
-      # ns_param	writerbufsize	8kB	;# 8kB, buffer size for writer threads
-      # ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
-
-      #
-      # Options for port reuse (see https://lwn.net/Articles/542629/)
-      # These options require proper OS support.
-      #
-      # ns_param  reuseport       true    ;# false;  normally not needed to be set, set by driverthreads when necessary
-      # ns_param	driverthreads	2	;# 1; use multiple driver threads; activates "reuseport"
-
-      #
-      # Extra request headers fields to be added for every request.
-      #
-      ns_param    extraheaders    $nssock_extraheaders
-  }
-
 
   #---------------------------------------------------------------------
   # Access log -- nslog
   #---------------------------------------------------------------------
-  ns_section ns/server/${server}/module/nslog {
+  ns_section ns/server/$server/module/nslog {
       #
       # General parameters for access.log
       #
@@ -1215,10 +1470,10 @@ Trigger: 2
       ns_param	maskipv6        ff:ff:ff:ff::  ;# mask for IPv6 addresses
 
       #
-      # Add extra entries to the access log via specifying a comma delimited
+      # Add extra entries to the access log via specifying a Tcl
       # list of request header fields in "extendedheaders"
       #
-      if {[ns_config "ns/server/${server}/acs" LogIncludeUserId 0]} {
+      if {[ns_config "ns/server/$server/acs" LogIncludeUserId 0]} {
           ns_param   extendedheaders    "X-User-Id"
       }
 
@@ -1230,68 +1485,48 @@ Trigger: 2
       # ns_param	rolllog		true	;# true, should server log files automatically
       # ns_param	rollhour	0	;# 0, specify at which hour to roll
       # ns_param	rollonsignal	true	;# false, perform roll on a sighup
-      ns_param	rollfmt		%Y-%m-%d ;# format appended to log file name
+      ns_param	rollfmt		%Y-%m-%d ;# format appended to log filename
   }
 
   #---------------------------------------------------------------------
   #
-  # CGI interface -- nscgi, if you have legacy stuff. Tcl or ADP files inside
-  # NaviServer are vastly superior to CGIs. I haven't tested these params but they
-  # should be right.
+  # CGI interface -- nscgi, if you have legacy stuff. Tcl or ADP files
+  # inside NaviServer are vastly superior to CGIs.
   #
   #---------------------------------------------------------------------
-  #ns_section "ns/server/${server}/module/nscgi"
-  #       ns_param	map	"GET  /cgi-bin ${serverroot}/cgi-bin"
-  #       ns_param	map	"POST /cgi-bin ${serverroot}/cgi-bin"
-  #       ns_param	Interps CGIinterps
-  #       ns_param        allowstaticresources true    ;# default: false
-
-  #ns_section "ns/interps/CGIinterps"
-  #       ns_param .pl "/usr/bin/perl"
-
+  # ns_section ns/server/$server/modules {
+  #     ns_param	nscgi ${bindir}/nscgi
+  # }
+  # ns_section ns/server/$server/module/nscgi {
+  #     ns_param  map	"GET  /cgi-bin ${serverroot}/cgi-bin"
+  #     ns_param  map	"POST /cgi-bin ${serverroot}/cgi-bin"
+  #     ns_param  Interps CGIinterps
+  #     ns_param  allowstaticresources true    ;# default: false
+  # }
+  # ns_section ns/interps/CGIinterps {
+  #     ns_param .pl "/usr/bin/perl"
+  # }
 
   #---------------------------------------------------------------------
   #
   # PAM authentication
   #
   #---------------------------------------------------------------------
-  ns_section ns/server/${server}/module/nspam {
-      ns_param	PamDomain          "pam_domain"
-  }
-
-  if {[info exists httpsport]} {
-      #---------------------------------------------------------------------
-      # SSL/TLS
-      #---------------------------------------------------------------------
-      foreach address $addresses suffix $suffixes {
-          ns_section    "ns/server/${server}/module/nsssl_$suffix" {
-              ns_param		address		$address
-              ns_param		port		$httpsport
-              ns_param		hostname	$hostname
-              ns_param		ciphers		"ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
-              ns_param		protocols	"!SSLv2:!SSLv3"
-              ns_param		certificate	$serverroot/etc/certfile.pem
-              ns_param		verify		0
-              ns_param		writerthreads	2
-              ns_param		writersize	1kB
-              ns_param		writerbufsize	16kB	;# 8kB, buffer size for writer threads
-              #ns_param   nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
-              #ns_param	writerstreaming	true	;# false
-              #ns_param	deferaccept	true    ;# false, Performance optimization
-              ns_param		maxinput	"$max_file_upload_mb MB" ;# Maximum file size for uploads in bytes
-              ns_param         extraheaders    $nsssl_extraheaders
-          }
-      }
-  }
+  # ns_section ns/server/$server/modules {
+  #     ns_param	nspam ${bindir}/nspam
+  # }
+  # ns_section ns/server/$server/module/nspam {
+  #     ns_param	PamDomain "pam_domain"
+  # }
 
   #---------------------------------------------------------------------
   #
-  # Database drivers
-  # The database driver is specified here.
-  # Make sure you have the driver compiled and put it in {aolserverdir}/bin
+  # Database drivers:
+  #
+  # Make sure the drivers are compiled and put it in $bindir.
   #
   #---------------------------------------------------------------------
-  ns_section "ns/db/drivers" {
+  ns_section ns/db/drivers {
 
       if { $database eq "oracle" } {
           ns_param	ora8           ${bindir}/ora8
@@ -1302,11 +1537,11 @@ Trigger: 2
       }
 
       if { $database eq "oracle" } {
-          ns_section "ns/db/driver/ora8"
+          ns_section ns/db/driver/ora8
           ns_param	maxStringLogLength -1
           ns_param	LobBufferSize      32768
       } else {
-          ns_section "ns/db/driver/postgres"
+          ns_section ns/db/driver/postgres
           # Set this parameter, when "psql" is not on your path (OpenACS specific)
           # ns_param	pgbin	"/usr/local/pg960/bin/"
       }
@@ -1323,7 +1558,7 @@ Trigger: 2
   #
   #     http://openacs.org/doc/tutorial-second-database
   #
-  ns_section ns/server/${server}/db {
+  ns_section ns/server/$server/db {
       ns_param	pools              pool1,pool2,pool3
       ns_param	defaultpool        pool1
   }
@@ -1334,10 +1569,11 @@ Trigger: 2
   }
 
   ns_section ns/db/pool/pool1 {
-      # ns_param	maxidle            0
-      # ns_param	maxopen            0
+      # ns_param	maxidle            0     ;# time interval for shut-down of idle connections; default: 5m
+      # ns_param	maxopen            0     ;# time interval for maximum time of open connections; default: 60m
+      # ns_param  checkinterval      5m    ;# check pools for stale handles in this interval
       ns_param	connections        15
-      ns_param    LogMinDuration     0.01   ;# when SQL logging is on, log only statements above this duration
+      ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
       ns_param	logsqlerrors       $debug
       if { $database eq "oracle" } {
           ns_param	driver             ora8
@@ -1356,14 +1592,15 @@ Trigger: 2
   # consider the two commands (e.g. entered over ds/shell)
   #
   #    ns_logctl severity "Debug(sql)" on
-  #    ns_db logminduration pool1  0.01
+  #    ns_db logminduration pool1  10ms
   #
 
   ns_section ns/db/pool/pool2 {
       # ns_param	maxidle            0
       # ns_param	maxopen            0
+      # ns_param  checkinterval      5m    ;# check pools for stale handles in this interval
       ns_param	connections        5
-      ns_param    LogMinDuration     0.01   ;# when SQL logging is on, log only statements above this duration
+      ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
       ns_param	logsqlerrors       $debug
       if { $database eq "oracle" } {
           ns_param	driver             ora8
@@ -1381,8 +1618,9 @@ Trigger: 2
   ns_section ns/db/pool/pool3 {
       # ns_param	maxidle            0
       # ns_param	maxopen            0
+      # ns_param  checkinterval      5m    ;# check pools for stale handles in this interval
       ns_param	connections        5
-      # ns_param  LogMinDuration     0.00   ;# when SQL logging is on, log only statements above this duration
+      # ns_param  LogMinDuration     0ms  ;# when SQL logging is on, log only statements above this duration
       ns_param	logsqlerrors       $debug
       if { $database eq "oracle" } {
           ns_param	driver             ora8
@@ -1398,24 +1636,15 @@ Trigger: 2
   }
 
 
-
   #---------------------------------------------------------------------
-  # Which modules should be loaded?  Missing modules break the server, so
-  # don't uncomment modules unless they have been installed.
+  # Which modules should be loaded for $server?  Missing modules break
+  # the server, so don't uncomment modules unless they have been
+  # installed.
 
-  ns_section ns/server/${server}/modules {
+  ns_section ns/server/$server/modules {
       ns_param	nslog		${bindir}/nslog
       ns_param	nsdb		${bindir}/nsdb
-      ns_param	nsproxy		${bindir}/nsproxy.so
-
-      #
-      # Load networking modules depending on existence of Tcl variables
-      # address_v* and httpsport
-      #
-      if {[info exists address_v4]} { ns_param nssock_v4 ${bindir}/nssock }
-      if {[info exists address_v6]} { ns_param nssock_v6 ${bindir}/nssock }
-      if {[info exists address_v4] && [info exists httpsport]} { ns_param nsssl_v4 ${bindir}/nsssl }
-      if {[info exists address_v6] && [info exists httpsport]} { ns_param nsssl_v6 ${bindir}/nsssl }
+      ns_param	nsproxy		${bindir}/nsproxy
 
       #
       # Determine, if libthread is installed
@@ -1431,15 +1660,11 @@ Trigger: 2
       # authorize-gateway package requires dqd_utils
       # ns_param	dqd_utils dqd_utils[expr {int($tcl_version)}]
 
-      # PAM authentication
-      # ns_param	nspam              ${bindir}/nspam
-
       # LDAP authentication
       # ns_param	nsldap             ${bindir}/nsldap
 
       # These modules aren't used in standard OpenACS installs
       # ns_param	nsperm             ${bindir}/nsperm
-      # ns_param	nscgi              ${bindir}/nscgi
   }
 
 
@@ -1447,26 +1672,60 @@ Trigger: 2
   #
   # nsproxy configuration
   #
-  ns_section ns/server/${server}/module/nsproxy {
-      # ns_param	maxslaves          8
-      # ns_param	sendtimeout        5000
-      # ns_param	recvtimeout        5000
-      # ns_param	waittimeout        100
-      # ns_param	idletimeout        3000000
+  ns_section ns/server/$server/module/nsproxy {
+      # ns_param	maxworkers         8
+      # ns_param	sendtimeout        5s
+      # ns_param	recvtimeout        5s
+      # ns_param	waittimeout        100ms
+      # ns_param	idletimeout        5m
+      # ns_param	logminduration     1s
   }
 
   #
   # nsstats configuration (global module)
   #
   # When installed under acs-subsite/www/admin/nsstats.tcl it is due to
-  # its /admin/ location save from public access.
+  # its /admin/ location safe from public access.
   #
-  ns_section "ns/module/nsstats" {
+  ns_section ns/module/nsstats {
       ns_param enabled  1
       ns_param user     ""
       ns_param password ""
       ns_param bglocks  {oacs:sched_procs}
   }
+
+
+  #
+  # Sample letsencrypt configuration.
+  #
+  # To use this, it is necessary to install the NaviServer letsencrypt
+  # module first, uncomment the two "ns_param" lines, and provide your
+  # desired domain names.
+  #
+  ns_section "ns/server/${server}/modules" {
+      #ns_param letsencrypt tcl
+  }
+  ns_section ns/server/${server}/module/letsencrypt {
+
+      # Provide one or more domain names (latter for multi-domain SAN
+      # certificates). These values are a default in case the domains
+      # are not provided by other means (e.g. "letsencrypt.tcl").  In
+      # case multiple NaviServer virtual hosts are in used, this
+      # definition must be on the ${server}, which is used for
+      # obtaining updates (e.g. main site) although it retrieves a
+      # certificate for many subsites.
+
+      #ns_param domains { openacs.org openacs.net fisheye.openacs.org cvs.openacs.org }
+  }
+
+
+
+  #ns_logctl severity Debug(ns:driver) on
+  #ns_logctl severity Debug(request) on
+  #ns_logctl severity Debug(task) on
+  #ns_logctl severity Debug(connchan) on
+  ns_logctl severity debug $debug
+  ns_logctl severity "Debug(sql)" $verboseSQL
 
   #
   # If you want to activate core dumps, one can use the following command
@@ -1474,22 +1733,9 @@ Trigger: 2
   #ns_log notice "nsd.tcl: ns_rlimit coresize [ns_rlimit coresize unlimited]"
 
   ns_log notice "nsd.tcl: using threadsafe tcl: [info exists tcl_platform(threaded)]"
-  ns_log notice "nsd.tcl: finished reading config file."
+  ns_log notice "nsd.tcl: finished reading configuration file."
 #+end_src
-** rootfs/usr/local/ns/conf/config_vars.tcl :code:
-:PROPERTIES:
-:CUSTOM_ID: rootfs-usr-local-ns-conf-config-vars-tcl
-:END:
 
-#+begin_src tcl :shebang "" :tangle-mode (identity #o644)
-  set hostname "localhost"
-  set httpport "8000"
-  set system_owner oupfiz5@yandex.ru
-  set serverroot /var/www/openacs
-  set develop_p 0
-  set staging_p 0
-  set proxy_mode "false"
-#+end_src
 ** rootfs/var/www/openacs/www/SYSTEM/openacs-test.tcl :code:
 :PROPERTIES:
 :CUSTOM_ID: rootfs-var-www-openacs-www-system-openacs-test-tcl
@@ -1616,7 +1862,7 @@ Trigger: 2
 
   services:
     openacs:
-      image: "${IMAGE_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}"
+      image: "${OACS_REPOSITORY}/${OACS_IMAGE_NAME}:${OACS_IMAGE_TAG}"
       env_file:
         - .env
       volumes:
@@ -1625,9 +1871,9 @@ Trigger: 2
       depends_on:
         - postgres
       ports:
-        - ${OACS_LISTEN_PORT}:8000
+        - ${OACS_LISTEN_PORT}:${oacs_httpport}
       healthcheck:
-        test: ["CMD-SHELL", "wget -qO - http://localhost:${OACS_LISTEN_PORT}/SYSTEM/openacs-test || exit 1"]
+        test: ["CMD-SHELL", "wget -qO - http://localhost:${oacs_httpport}/SYSTEM/openacs-test || exit 1"]
         interval: 10s
         timeout: 5s
         retries: 2
@@ -1642,7 +1888,7 @@ Trigger: 2
       volumes:
         - db_data:/var/lib/postgresql/data
       healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+        test: ["CMD-SHELL", "pg_isready -U ${PGUSER}"]
         interval: 10s
         timeout: 5s
         retries: 5
@@ -1651,6 +1897,7 @@ Trigger: 2
     db_data:
     content:
 #+end_src
+
 ** .env :code:
 :PROPERTIES:
 :CUSTOM_ID: -env
@@ -1659,26 +1906,32 @@ Trigger: 2
   # * Common
   TZ="${TZ:-UTC}"
 
-  # * OpenACS
-  IMAGE_NAME="${IMAGE_NAME:-openacs}"
-  IMAGE_REPOSITORY="${IMAGE_REPOSITORY:-oupfiz5}"
-  IMAGE_TAG="${IMAGE_TAG:-oacs-5-10}"
-  NS_CONF="${NS_CONF:-/usr/local/ns/conf/openacs_config.tcl}"
-  NS_VARS="${NS_VARS:-/usr/local/ns/conf/config_vars.tcl}"
-  OACS_LISTEN_PORT="${OACS_LISTEN_PORT:-8080}"
-
   # * Postgres
-  DB_HOST="${DB_HOST:-postgres}"
-  DB_NAME="${DB_NAME:-openacs}"
-  DB_PASS="${DB_PASS:-testing}"
-  DB_USER="${DB_USER:-openacs}"
-  POSTGRES_DB="${DB_NAME}"
-  POSTGRES_PASSWORD="${DB_PASS}"
+  PGDATABASE="${PGDATABASE:-openacs}"
+  PGHOST="${PGHOST:-postgres}"
+  PGPASSWORD="${PGPASSWORD:-testing}"
+  PGPORT="${PGPORT:-5432}"
+  PGUSER="${PGUSER:-openacs}"
+  POSTGRES_DB="${PGDATABASE}"
+  POSTGRES_PASSWORD="${PGPASSWORD}"
   POSTGRES_REPOSITORY="postgres"
   POSTGRES_TAG="14.1-alpine"
-  POSTGRES_USER="${DB_USER}"
-#+end_src
+  POSTGRES_USER="${PGUSER}"
 
+  # * OpenACS
+  NS_CONF="${NS_CONF:-/usr/local/ns/conf/openacs-config.tcl}"
+  OACS_REPOSITORY="${OACS_REPOSITORY:-oupfiz5}"
+  OACS_IMAGE_NAME="${OACS_IMAGE_NAME:-openacs}"
+  OACS_IMAGE_TAG="${OACS_IMAGE_TAG:-oacs-5-10}"
+  OACS_LISTEN_PORT="${OACS_LISTEN_PORT:-8080}"
+  oacs_httpport='8000'
+  oacs_db_user="${PGUSER}"
+  oacs_db_passwod="${PGPASSWORD}"
+  oacs_db_name="${PGDATABASE}"
+  oacs_db_host="${PGHOST}"
+  oacs_db_port="${PGPORT}"
+  oacs_ipaddress='0.0.0.0'
+#+end_src
 * Tests :test:noexport:
 :PROPERTIES:
 :header-args:bats+:   :tangle (concat (file-name-directory (mapconcat 'identity (split-string  buffer-file-name "org/") "")) "/tests/" (nth 4 (org-heading-components)) )
