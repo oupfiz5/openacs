@@ -1867,7 +1867,6 @@ Trigger: 2
         - .env
       volumes:
         - content:/var/www/openacs/content-repository-content-files
-        - ./rootfs/usr/local/ns/conf/:/usr/local/ns/conf/
       depends_on:
         - postgres
       ports:
