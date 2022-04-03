@@ -21,14 +21,17 @@
         -   [Prune all](#prune-all)
 -   [Configuration options](#configuration-options)
     -   [General options](#general-options)
-    -   [Timezone](#timezone)
+    -   [oacs\_\* variables](#oacs---variables)
     -   [OpenACS listen port](#openacs-listen-port)
+    -   [OpenACS docker image](#openacs-docker-image)
     -   [NaviServer configuration file](#naviserver-configuration-file)
-    -   [NaviServer variable file](#naviserver-variable-file)
+    -   [PostgreSQL docker image](#postgresql-docker-image)
     -   [Database hostname](#database-hostname)
+    -   [Database name](#database-name)
     -   [Database username](#database-username)
     -   [Database password](#database-password)
     -   [Postgres tag](#postgres-tag)
+    -   [Timezone](#timezone)
 -   [CI/CD](#ci-cd)
 -   [Maintenance](#maintenance)
     -   [Shell access](#shell-access)
@@ -148,7 +151,55 @@ You can download docker images from dockerhub:
 <tr>
 <td class="org-left">OACS_TAG</td>
 <td class="org-left">oacs-5-10</td>
-<td class="org-left">Set default OpenACS version</td>
+<td class="org-left">Set OpenACS version</td>
+</tr>
+</tbody>
+
+<tbody>
+<tr>
+<td class="org-left">NS_IMAGE_TAG</td>
+<td class="org-left">20.04-4.99.23</td>
+<td class="org-left">Set NaviServer version</td>
+</tr>
+</tbody>
+
+<tbody>
+<tr>
+<td class="org-left">NS_IMAGE_REPOSITORY</td>
+<td class="org-left">oupfiz5</td>
+<td class="org-left">Set NaviServer repository</td>
+</tr>
+</tbody>
+
+<tbody>
+<tr>
+<td class="org-left">NS_IMAGE_NAME</td>
+<td class="org-left">naviserver</td>
+<td class="org-left">Set NaviServer image name</td>
+</tr>
+</tbody>
+
+<tbody>
+<tr>
+<td class="org-left">IMAGE_NAME</td>
+<td class="org-left">openacs</td>
+<td class="org-left">Set OpenaACS image name</td>
+</tr>
+</tbody>
+
+<tbody>
+<tr>
+<td class="org-left">IMAGE_REPOSITORY</td>
+<td class="org-left">oupfiz5</td>
+<td class="org-left">Set OpenACS repository</td>
+</tr>
+</tbody>
+
+<tbody>
+<tr>
+<td class="org-left">IMAGE_TAG</td>
+<td class="org-left">oacs-5-10</td>
+<td class="org-left">Set OpenACS image tag</td>
 </tr>
 </tbody>
 </table>
@@ -158,12 +209,14 @@ You can download docker images from dockerhub:
 
 ### Example of build
 
+    set -a; source ../VERSIONS ; set +a;
+    IMAGE="${IMAGE:-${IMAGE_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}}"
     docker build --no-cache \
-      --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-      --build-arg OACS_TAG="oacs-5-10" \
-      -t oupfiz5/openacs:oacs-5-10 \
-      -f ./Dockerfile \
-      .
+           --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+           --build-arg OACS_TAG="oacs-5-10" \
+           -t "${IMAGE}" \
+           -f ./Dockerfile \
+           .
 
 
 <a id="quickstart"></a>
@@ -285,79 +338,216 @@ Logs tail:
 
 <tbody>
 <tr>
-<td class="org-left"><a href="#timezone">TZ</a></td>
+<td class="org-left">NS_CONF</td>
+<td class="org-left">openacs-config.tcl</td>
+<td class="org-left">Full path to configuration file</td>
+</tr>
+
+
+<tr>
+<td class="org-left">oacs_db_host*</td>
+<td class="org-left">${PGHOST}</td>
+<td class="org-left">Set database host for OpenACS</td>
+</tr>
+
+
+<tr>
+<td class="org-left">oacs_db_name*</td>
+<td class="org-left">${PGDATABASE}</td>
+<td class="org-left">Set database name for OpenACS</td>
+</tr>
+
+
+<tr>
+<td class="org-left">oacs_db_passwod*</td>
+<td class="org-left">${PGPASSWORD}</td>
+<td class="org-left">Set db user password for OpenACS</td>
+</tr>
+
+
+<tr>
+<td class="org-left">oacs_db_port*</td>
+<td class="org-left">${PGPORT}</td>
+<td class="org-left">Set database port for OpenACS</td>
+</tr>
+
+
+<tr>
+<td class="org-left">oacs_db_user*</td>
+<td class="org-left">${PGUSER}</td>
+<td class="org-left">Set database user for OpenACS</td>
+</tr>
+
+
+<tr>
+<td class="org-left">oacs_httpport*</td>
+<td class="org-left">8000</td>
+<td class="org-left">Set listen port for OpenACS</td>
+</tr>
+
+
+<tr>
+<td class="org-left">OACS_IMAGE_NAME</td>
+<td class="org-left">openacs</td>
+<td class="org-left">Set OpenACS image name</td>
+</tr>
+
+
+<tr>
+<td class="org-left">OACS_IMAGE_TAG</td>
+<td class="org-left">oacs-5-10</td>
+<td class="org-left">Set OpenACS image tag</td>
+</tr>
+
+
+<tr>
+<td class="org-left">oacs_ipaddress*</td>
+<td class="org-left">0.0.0.0</td>
+<td class="org-left">Set listen address for OpenACS</td>
+</tr>
+
+
+<tr>
+<td class="org-left">OACS_LISTEN_PORT</td>
+<td class="org-left">8080</td>
+<td class="org-left">Set http listen port, example 8080</td>
+</tr>
+
+
+<tr>
+<td class="org-left">OACS_REPOSITORY</td>
+<td class="org-left">oupfiz5</td>
+<td class="org-left">Set OpenACS repository name</td>
+</tr>
+
+
+<tr>
+<td class="org-left">PGDATABASE</td>
+<td class="org-left">openacs</td>
+<td class="org-left">Database name</td>
+</tr>
+
+
+<tr>
+<td class="org-left">PGHOST</td>
+<td class="org-left">postgres</td>
+<td class="org-left">Database host name</td>
+</tr>
+
+
+<tr>
+<td class="org-left">PGPASWORD</td>
+<td class="org-left">testing</td>
+<td class="org-left">Database user password</td>
+</tr>
+
+
+<tr>
+<td class="org-left">PGPORT</td>
+<td class="org-left">5432</td>
+<td class="org-left">Database port</td>
+</tr>
+
+
+<tr>
+<td class="org-left">PGUSER</td>
+<td class="org-left">openacs</td>
+<td class="org-left">Database user name</td>
+</tr>
+
+
+<tr>
+<td class="org-left">POSTGRES_DB</td>
+<td class="org-left">${PGDATABASE}</td>
+<td class="org-left">Set postgres db name for docker image</td>
+</tr>
+
+
+<tr>
+<td class="org-left">POSTGRES_PASSWORD</td>
+<td class="org-left">${PGPASSWORD}</td>
+<td class="org-left">Set postgres db password for docker image</td>
+</tr>
+
+
+<tr>
+<td class="org-left">POSTGRES_USER</td>
+<td class="org-left">${PGUSER}</td>
+<td class="org-left">Set postgres db user for docker image</td>
+</tr>
+
+
+<tr>
+<td class="org-left">POSTGRES_REPOSITORY</td>
+<td class="org-left">postgres</td>
+<td class="org-left">Set default postgres repository</td>
+</tr>
+
+
+<tr>
+<td class="org-left">POSTGRES_TAG</td>
+<td class="org-left">14.1-alpine</td>
+<td class="org-left">Set default postgres tag</td>
+</tr>
+
+
+<tr>
+<td class="org-left">TZ</td>
 <td class="org-left">UTC</td>
 <td class="org-left">Set timezone, example Europe/Moscow</td>
 </tr>
 </tbody>
-
-<tbody>
-<tr>
-<td class="org-left"><a href="#openacs-listen-port">OACS_LISTEN_PORT</a></td>
-<td class="org-left">8080</td>
-<td class="org-left">Set http listen port, example 8080</td>
-</tr>
-</tbody>
-
-<tbody>
-<tr>
-<td class="org-left"><a href="#naviserver-configuration-file">NS_CONF</a></td>
-<td class="org-left">openacs_config.tcl</td>
-<td class="org-left">Configuration file for NaviServer</td>
-</tr>
-</tbody>
-
-<tbody>
-<tr>
-<td class="org-left"><a href="#naviserver-variable-file">NS_VARS</a></td>
-<td class="org-left">config_vars.tcl</td>
-<td class="org-left">Variable file for NaviServer</td>
-</tr>
-</tbody>
-
-<tbody>
-<tr>
-<td class="org-left"><a href="#database-hostname">DB_HOST</a></td>
-<td class="org-left">postgres</td>
-<td class="org-left">Database host name</td>
-</tr>
-</tbody>
-
-<tbody>
-<tr>
-<td class="org-left"><a href="#database-username">DB_USER</a></td>
-<td class="org-left">openacs</td>
-<td class="org-left">Database user name</td>
-</tr>
-</tbody>
-
-<tbody>
-<tr>
-<td class="org-left"><a href="#database-password">DB_PASS</a></td>
-<td class="org-left">testing</td>
-<td class="org-left">Database user password</td>
-</tr>
-</tbody>
-
-<tbody>
-<tr>
-<td class="org-left"><a href="#postgres-tag">POSTGRES_TAG</a></td>
-<td class="org-left">14.1-alpine</td>
-<td class="org-left">Postgres image tag</td>
-</tr>
-</tbody>
 </table>
+
+-   setting these variables as environment variables with the "oacs\_" prefix (suitable for e.g. docker setups for `defaultConfig` in NS\_CONF ([see naviserver commit](https://bitbucket.org/naviserver/naviserver/commits/f9a919f8cb39fdf3b25fac67f5fde69f27c2a83a)).
 
 All options have predifined values and store in file `.env` .
 
 
-<a id="timezone"></a>
+<a id="oacs---variables"></a>
 
-## Timezone
+## oacs\_\* variables
 
-Set the timezone for the containers, defaults to UTC. To set the timezone set the desired timezone with the variable TZ.
+Setting these variables as environment variables with the "oacs\_" prefix (suitable for e.g. docker setups for `defaultConfig` in NS\_CONF ([see naviserver commit](https://bitbucket.org/naviserver/naviserver/commits/f9a919f8cb39fdf3b25fac67f5fde69f27c2a83a)).
+Code example from NaviServer configuration file is:
 
-    TZ="Europe/Moscow" docker-compose up
+      ...
+      # All default variables in defaultConfig can be overloaded by
+      # 1) setting these variables in this file (highest precedence)
+      # 2) setting these variables as environment variables with
+      #    the "oacs_" prefix (suitable for e.g. docker setups)
+      # 3) set the variables from the default values.
+      #
+      set defaultConfig {
+          hostname	localhost
+          ipaddress	127.0.0.1
+          httpport	8000
+          httpsport	""
+
+          server     "openacs"
+          serverroot	/var/www/$server
+          logroot	$serverroot/log/
+          homedir	/usr/local/ns
+          bindir	$homedir/bin
+          db_name	$server
+          db_user	$server
+          db_host	localhost
+          db_port	""
+          db_password	"testing"
+      }
+    ...
+
+Environment variables from .env file are:
+
+    ...
+    oacs_httpport='8000'
+    oacs_db_user="${PGUSER}"
+    oacs_db_passwod="${PGPASSWORD}"
+    oacs_db_name="${PGDATABASE}"
+    oacs_db_host="${PGHOST}"
+    oacs_db_port="${PGPORT}"
+    oacs_ipaddress='0.0.0.0'
+    ...
 
 
 <a id="openacs-listen-port"></a>
@@ -367,6 +557,17 @@ Set the timezone for the containers, defaults to UTC. To set the timezone set th
 `OACS_LISTEN_PORT` set the http listen port for the openacs.  In this case the OpenACS is accessible by URL [http://localhost:8070](http://localhost:8070).
 
     OACS_LISTEN_PORT=8070 docker-compose up
+
+
+<a id="openacs-docker-image"></a>
+
+## OpenACS docker image
+
+Docker-compose uses the following variables for pulling OpenACS image from docker hub:
+
+-   OACS\_REPOSITORY
+-   OACS\_IMAGE\_NAME
+-   OACS\_IMAGE\_TAG
 
 
 <a id="naviserver-configuration-file"></a>
@@ -381,43 +582,50 @@ Set the timezone for the containers, defaults to UTC. To set the timezone set th
         NS_CONF="/usr/local/ns/conf/my-config.tcl" docker-compose up
 
 
-<a id="naviserver-variable-file"></a>
+<a id="postgresql-docker-image"></a>
 
-## NaviServer variable file
+## PostgreSQL docker image
 
-`NS_VARS` - - configuration file. This configuration file contains several parameters which are frequently changed (e.g. for debug or other configurations). The provided NaviServer configuation file reads the variable file and uses its values.  Default value is `/usr/local/ns/conf/config_vars.tcl`
+Docker-compose uses the following variables for pulling postgres image from docker hub:
 
-1.  Put the configuration file to `rootfs/usr/local/ns/conf`
-2.  Run docker compose
-
-        NS_VARS="/usr/local/ns/conf/my_vars.tcl" docker-compose up
+-   POSTGRES\_REPOSITORY
+-   POSTGRES\_TAG
 
 
 <a id="database-hostname"></a>
 
 ## Database hostname
 
-`DB_HOST` set the database hostname for the openacs. By default it has name of docker-compose database  service - postgres.
+`PGHOST` set the database hostname for the openacs. By default it has name of docker-compose database  service - postgres.
 
-    DB_HOST=foo docker-compose up
+    PGHOST=foo docker-compose up
+
+
+<a id="database-name"></a>
+
+## Database name
+
+`PGDATABASE` set the database name for the openacs. By default it has name of docker-compose database  service - openacs.
+
+    PGDATABASE=foo docker-compose up
 
 
 <a id="database-username"></a>
 
 ## Database username
 
-`DB_USER` set the database username for the openacs and postgres.
+`PGUSER` set the database username for the openacs and postgres.
 
-    DB_USER=foouser docker-compose up
+    PGUSER=foouser docker-compose up
 
 
 <a id="database-password"></a>
 
 ## Database password
 
-`DB_PASS` set the database user password for the openacs and postgres.
+`PGPASSWORD` set the database user password for the openacs and postgres.
 
-    DB_PASS=foopass docker-compose up
+    PGPASSWORD=foopass docker-compose up
 
 
 <a id="postgres-tag"></a>
@@ -427,6 +635,15 @@ Set the timezone for the containers, defaults to UTC. To set the timezone set th
 `POSTGRES_TAG` set the docker image tag for [official postgres](https://hub.docker.com/_/postgres).  Pay attention - some openacs version can use only correspond version of postgres.
 
     POSTGRES_TAG="14.1-alpine" docker-compose up
+
+
+<a id="timezone"></a>
+
+## Timezone
+
+Set the timezone for the containers, defaults to UTC. To set the timezone set the desired timezone with the variable TZ. Useful for setup correct time in logging.
+
+    TZ="Europe/Moscow" docker-compose up
 
 
 <a id="ci-cd"></a>
