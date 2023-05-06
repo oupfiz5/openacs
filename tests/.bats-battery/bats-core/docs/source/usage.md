@@ -32,7 +32,7 @@ $ bats addition.bats
 
 If Bats is not connected to a terminal—in other words, if you run it from a
 continuous integration system, or redirect its output to a file—the results are
-displayed in human-readable, machine-parsable [TAP format][TAP].
+displayed in human-readable, machine-parsable [TAP format][tap-format].
 
 You can force TAP output from a terminal by invoking Bats with the `--formatter tap`
 option.
@@ -54,14 +54,33 @@ ok 1 addition using bc
 ok 2 addition using dc
 ```
 
-Test reports will be output in the executing directory, but may be placed elsewhere
-by specifying the `--output` flag.
+If you have your own formatter, you can use an absolute path to the executable
+to use it:
+
+```bash
+$ bats --formatter /absolute/path/to/my-formatter addition.bats
+addition using bc WORKED
+addition using dc FAILED
+```
+
+You can also generate test report files via `--report-formatter` which accepts
+the same options as `--formatter`. By default, the file is stored in the current
+workdir. However, it may be placed elsewhere by specifying the `--output` flag.
 
 ```text
-$ bats --formatter junit addition.bats --output /tmp
+$ bats --report-formatter junit addition.bats --output /tmp
 1..2
 ok 1 addition using bc
 ok 2 addition using dc
+
+$ cat /tmp/report.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites time="0.073">
+<testsuite name="addition.bats" tests="2" failures="0" errors="0" skipped="0">
+    <testcase classname="addition.bats" name="addition using bc" time="0.034" />
+    <testcase classname="addition.bats" name="addition using dc" time="0.039" />
+</testsuite>
+</testsuites>
 ```
 
 ## Parallel Execution
@@ -76,7 +95,7 @@ a compatible replacement installed) using the `--jobs` parameter. This can
 result in your tests completing faster (depending on your tests and the testing
 hardware).
 
-Ordering of parallised tests is not guaranteed, so this mode may break suites
+Ordering of parallelised tests is not guaranteed, so this mode may break suites
 with dependencies between tests (or tests that write to shared locations). When
 enabling `--jobs` for the first time be sure to re-run bats multiple times to
 identify any inter-test dependencies or non-deterministic test behaviour.
@@ -88,7 +107,8 @@ sequentially.
 
 If you have files where tests within the file would interfere with each other, you can use
 `--no-parallelize-within-files` to disable parallelization within all files.
-If you want more finegrained control, you can `export BATS_NO_PARALLELIZE_WITHIN_FILE=true` in `setup_file()`
+If you want more fine-grained control, you can `export BATS_NO_PARALLELIZE_WITHIN_FILE=true` in `setup_file()`
 or outside any function to disable parallelization only within the containing file.
 
+[tap-format]: https://testanything.org
 [gnu-parallel]: https://www.gnu.org/software/parallel/

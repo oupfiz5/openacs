@@ -1,4 +1,4 @@
-# Bats-core: Bash Automated Testing System (2018)
+# Bats-core: Bash Automated Testing System
 
 [![Latest release](https://img.shields.io/github/release/bats-core/bats-core.svg)](https://github.com/bats-core/bats-core/releases/latest)
 [![npm package](https://img.shields.io/npm/v/bats.svg)](https://www.npmjs.com/package/bats)
@@ -10,8 +10,6 @@
 
 Bats is a [TAP](https://testanything.org/)-compliant testing framework for Bash.  It provides a simple
 way to verify that the UNIX programs you write behave as expected.
-
-[TAP]: https://testanything.org
 
 A Bats test file is a Bash script with special syntax for defining test cases.
 Under the hood, each test case is just a function with a description.
@@ -50,8 +48,8 @@ each line is an assertion of truth.
 - [Contact](#contact)
 - [Version history](#version-history)
 - [Background](#background)
-  - [What's the plan and why?](#whats-the-plan-and-why)
-  - [Why was this fork created?](#why-was-this-fork-created)
+  * [What's the plan and why?](#whats-the-plan-and-why)
+  * [Why was this fork created?](#why-was-this-fork-created)
 - [Copyright](#copyright)
 
 <!-- tocstop -->
@@ -86,8 +84,7 @@ or look at the other communication channels.
 
 ## Contact
 
-- We are `#bats` on freenode;
-- Or leave a message on [gitter].
+- You can find and chat with us on our [Gitter].
 
 ## Version history
 
@@ -118,7 +115,7 @@ There was an initial [call for maintainers][call-maintain] for the original Bats
 
 ## Copyright
 
-© 2017-2021 bats-core organization
+© 2017-2022 bats-core organization
 
 © 2011-2016 Sam Stephenson
 
@@ -127,4 +124,4 @@ Bats is released under an MIT-style license; see `LICENSE.md` for details.
 See the [parent project](https://github.com/bats-core) at GitHub or the
 [AUTHORS](AUTHORS) file for the current project maintainer team.
 
-[gitter]: https://gitter.im/bats-core/bats-core?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+[gitter]: https://gitter.im/bats-core/bats-core

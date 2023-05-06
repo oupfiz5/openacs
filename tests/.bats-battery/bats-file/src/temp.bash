@@ -63,8 +63,10 @@
 temp_make() {
   # Check caller.
   if ! ( batslib_is_caller --indirect 'setup' \
+      || batslib_is_caller --indirect 'setup_file' \
       || batslib_is_caller --indirect "$BATS_TEST_NAME" \
-      || batslib_is_caller --indirect 'teardown' )
+      || batslib_is_caller --indirect 'teardown' \
+      || batslib_is_caller --indirect 'teardown_file' )
   then
     echo "Must be called from \`setup', \`@test' or \`teardown'" \
       | batslib_decorate 'ERROR: temp_make' \
@@ -96,11 +98,10 @@ temp_make() {
   local template="$prefix"
   template+="${BATS_TEST_FILENAME##*/}"
   template+="-${BATS_TEST_NUMBER}"
-  template+='-XXXXXXXXXX'
+  template+='-XXXXXX'
 
   local path
-  path="$(mktemp -d  --  "${BATS_TMPDIR}/${template}" 2>&1)"
-  if (( $? )); then
+  if ! path="$(mktemp -d  --  "${BATS_TMPDIR}/${template}" 2>&1)"; then
     echo "$path" \
       | batslib_decorate 'ERROR: temp_make' \
       | fail
@@ -152,24 +153,25 @@ temp_del() {
   local -r path="$1"
 
   # Environment variables.
-  if [[ $BATSLIB_TEMP_PRESERVE == '1' ]]; then
+  if [[ ${BATSLIB_TEMP_PRESERVE-} == '1' ]]; then
     return 0
-  elif [[ $BATSLIB_TEMP_PRESERVE_ON_FAILURE == '1' ]]; then
+  elif [[ ${BATSLIB_TEMP_PRESERVE_ON_FAILURE-} == '1' ]]; then
     # Check caller.
-    if ! batslib_is_caller --indirect 'teardown'; then
-      echo "Must be called from \`teardown' when using \`BATSLIB_TEMP_PRESERVE_ON_FAILURE'" \
+    if ! ( batslib_is_caller --indirect 'teardown' \
+        || batslib_is_caller --indirect 'teardown_file' )
+    then
+      echo "Must be called from \`teardown' or \`teardown_file' when using \`BATSLIB_TEMP_PRESERVE_ON_FAILURE'" \
         | batslib_decorate 'ERROR: temp_del' \
         | fail
       return $?
     fi
 
-    (( BATS_TEST_COMPLETED != 1 )) && return 0
+    (( ${BATS_TEST_COMPLETED:-0} != 1 )) && return 0
   fi
 
   # Delete directory.
   local result
-  result="$(rm -r -- "$path" 2>&1)"
-  if (( $? )); then
+  if ! result="$(rm -r -- "$path" 2>&1 >/dev/null )"; then
     echo "$result" \
       | batslib_decorate 'ERROR: temp_del' \
       | fail

@@ -65,13 +65,14 @@ git commit -m "feat: release Bats v${NEW_BATS_VERSION}"
 # changelog start
 EOF
 
-local DELIM=$(echo -en "\001");
-sed -E -n "\\${DELIM}^## \[${NEW_BATS_VERSION}\]${DELIM},\\${DELIM}^## ${DELIM}p" docs/CHANGELOG.md \
-  | head -n -1 \
-  | sed -E \
-    -e 's,^## \[([0-9\.]+)] - (.*),Bats \1\n\nReleased: \2,' \
-    -e 's,^### (.*),\1:,g' \
-  | tee "${BATS_RELEASE_NOTES}"
+  local DELIM
+  DELIM=$(echo -en "\001")
+  sed -E -n "\\${DELIM}^## \[${NEW_BATS_VERSION}\]${DELIM},\\${DELIM}^## ${DELIM}p" docs/CHANGELOG.md |
+    head -n -1 |
+    sed -E \
+      -e 's,^## \[([0-9\.]+)] - (.*),Bats \1\n\nReleased: \2,' \
+      -e 's,^### (.*),\1:,g' |
+    tee "${BATS_RELEASE_NOTES}"
 
   cat <<EOF
 # changelog end
@@ -84,7 +85,7 @@ git tag -a -s "v${NEW_BATS_VERSION}" --message "${BATS_RELEASE_NOTES}"
 
 git push --follow-tags
 
-5. Use Github hub to make a draft release:
+5. Use GitHub hub to make a draft release:
 
 hub release create "v${NEW_BATS_VERSION}" --draft --file "${BATS_RELEASE_NOTES}"
 

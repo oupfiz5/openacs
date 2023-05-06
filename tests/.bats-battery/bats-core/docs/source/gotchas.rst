@@ -9,6 +9,15 @@ convention of using return code 0 to signify success and everything non-zero to 
 
 Please adhere to this idiom while using bats, or you will constantly work against your environment.
 
+My negated statement (e.g. ! true) does not fail the test, even when it should.
+-------------------------------------------------------------------------------
+
+Bash deliberately excludes negated return values from causing a pipeline to exit (see bash's `-e` option).
+Use `run !` on Bats 1.5.0 and above. For older bats versions, use one of `! x || false` or `run` with `[ $status != 0 ]`.
+
+If the negated command is the final statement in a test, that final statement's (negated) exit status will propagate through to the test's return code as usual.
+Negated statements of one of the correct forms mentioned above will explicitly fail the test when the pipeline returns true, regardless of where they occur in the test.
+
 I cannot register a test multiple times via for loop.
 -----------------------------------------------------
 
@@ -36,8 +45,8 @@ If you need such a feature, please let us know about your usecase.
 
 As a workaround you can use environment variables to pass parameters.
 
-Testing functions that return their results via a variable.
------------------------------------------------------------
+Why can't my function return results via a variable when using `run`?
+---------------------------------------------------------------------
 
 The `run` function executes its command in a subshell which means the changes to variables won't be available in the calling shell.
 
@@ -101,3 +110,23 @@ or use a function to wrap the pipe in:
     }
 
     run fun_with_pipes
+
+`[[ ]]` (or `(( ))` did not fail my test
+----------------------------------------
+
+The `set -e` handling of `[[ ]]` and `(( ))` changed in Bash 4.1. Older versions, like 3.2 on MacOS,
+don't abort the test when they fail, unless they are the last command before the (test) function returns,
+making their exit code the return code.
+
+`[ ]`  does not suffer from this, but is no replacement for all `[[ ]]` usecases. Appending ` || false` will work in all cases.
+
+Background tasks prevent the test run from terminating when finished
+--------------------------------------------------------------------
+
+When running a task in background, it will inherit the opened FDs of the process it was forked from.
+This means that the background task forked from a Bats test will hold the FD for the pipe to the formatter that prints to the terminal,
+thus keeping it open until the background task finished.
+Due to implementation internals of Bats and bash, this pipe might be held in multiple FDs which all have to be closed by the background task.
+
+You can use `close_non_std_fds from `test/fixtures/bats/issue-205.bats` in the background job to close all FDs except stdin, stdout and stderr, thus solving the problem.
+More details about the issue can be found in [#205](https://github.com/bats-core/bats-core/issues/205#issuecomment-973572596).

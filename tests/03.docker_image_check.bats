@@ -10,7 +10,7 @@ setup() {
             grep '"tag_name":' | \
             sed -E 's/.*"v([^"]+)".*/\1/' \
            )
-  }
+}
 
 @test "Check docker image" {
     run docker run --rm \
@@ -21,4 +21,4 @@ setup() {
         --exit-level fatal \
         "${IMAGE}"
     assert_success
-  }
+}
