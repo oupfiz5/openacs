@@ -470,7 +470,7 @@ docker exec -it openacs_postgres_1 /bin/bash
 CONTAINER_NAME="${CONTAINER_NAME:-openacs}"
 NS_IMAGE_REPOSITORY="${NS_IMAGE_REPOSITORY:-oupfiz5}"
 NS_IMAGE_NAME="${NS_IMAGE_NAME:-naviserver}"
-NS_IMAGE_TAG="${NS_IMAGE_TAG:-4.99.24}"
+NS_IMAGE_TAG="${NS_IMAGE_TAG:22.04-4.99.24}"
 IMAGE_NAME="${IMAGE_NAME:-openacs}"
 IMAGE_REPOSITORY="${IMAGE_REPOSITORY:-oupfiz5}"
 IMAGE_TAG="${IMAGE_TAG:-oacs-5-10}"
@@ -1752,7 +1752,8 @@ ns_log notice "nsd.tcl: using threadsafe tcl: [info exists tcl_platform(threaded
 ns_log notice "nsd.tcl: finished reading configuration file."
 #+end_src
 
-** rootfs/var/www/openacs/www/SYSTEM/openacs-test.tcl :code:
+** :code:
+rootfs/var/www/openacs/www/SYSTEM/openacs-test.tcl
 :PROPERTIES:
 :CUSTOM_ID: rootfs-var-www-openacs-www-system-openacs-test-tcl
 :END:
