@@ -6,7 +6,7 @@ How do I set the working directory?
 
 The working directory is simply the directory where you started when executing bats.
 If you want to enforce a specific directory, you can use `cd` in the `setup_file`/`setup` functions.
-However, be aware that code outside any function will run before any of these setup functions and my interfere with bats' internals.
+However, be aware that code outside any function will run before any of these setup functions and might interfere with bats' internals.
 
 
 How do I see the output of the command under `run` when a test fails?
@@ -145,7 +145,8 @@ If you need the library inside `setup_file` or `teardown_file` you need to load 
 How to set a test timeout in bats?
 ----------------------------------
 
-Unfortunately, this is not possible yet. Please contribute to issue `#396 <https://github.com/bats-core/bats-core/issues/396>`_ for further progress.
+Set the variable `$BATS_TEST_TIMEOUT` before `setup()` starts. This means you can set it either on the command line,
+in free code in the test file or in `setup_file()`.
 
 How can I lint/shell-format my bats tests?
 ------------------------------------------

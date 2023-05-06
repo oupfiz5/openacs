@@ -1,3 +1,4 @@
+
 # Table of Contents
 
 -   [About](#about)
@@ -42,7 +43,7 @@
 
 # About
 
-This is [OpenACS](https://openacs.org/) on [Ubuntu base docker image](https://hub.docker.com/_/ubuntu) (version 20.04) .  To install OpenACS I used  code from  [Gustaf Neumann](https://github.com/gustafn/install-ns) script [install-oacs.sh](https://github.com/gustafn/install-ns/blob/master/install-oacs.sh). The base image is [oupfiz5/openacs](https://hub.docker.com/r/oupfiz5/openacs)
+This is [OpenACS](https://openacs.org/) on [Ubuntu base docker image](https://hub.docker.com/_/ubuntu) (version 22.04) .  To install OpenACS I used  code from  [Gustaf Neumann](https://github.com/gustafn/install-ns) script [install-oacs.sh](https://github.com/gustafn/install-ns/blob/master/install-oacs.sh). The base image is [oupfiz5/openacs](https://hub.docker.com/r/oupfiz5/openacs)
 
 OpenACS is self-hosting at <https://chiselapp.com/user/oupfiz5/repository/openacs>.
 
@@ -158,7 +159,7 @@ You can download docker images from dockerhub:
 <tbody>
 <tr>
 <td class="org-left">NS_IMAGE_TAG</td>
-<td class="org-left">20.04-4.99.23</td>
+<td class="org-left">4.99.24</td>
 <td class="org-left">Set NaviServer version</td>
 </tr>
 </tbody>
@@ -212,11 +213,11 @@ You can download docker images from dockerhub:
     set -a; source ../VERSIONS ; set +a;
     IMAGE="${IMAGE:-${IMAGE_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}}"
     docker build --no-cache \
-           --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-           --build-arg OACS_TAG="oacs-5-10" \
-           -t "${IMAGE}" \
-           -f ./Dockerfile \
-           .
+        --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+        --build-arg OACS_TAG="oacs-5-10" \
+        -t "${IMAGE}" \
+        -f ./Dockerfile \
+        .
 
 
 <a id="quickstart"></a>
@@ -236,14 +237,14 @@ You can download docker images from dockerhub:
 Clone repository from:
 
 -   fossil:
-
+    
         fossil clone https://chiselapp.com/user/oupfiz5/repository/openacs openacs.fossil
         mkdir openacs
         cd openacs
         fossil open ../openacs.fossil
 
 -   GitHub:
-
+    
         git clone https://github.com/oupfiz5/openacs.git
         cd openacs
 
@@ -511,30 +512,30 @@ All options have predifined values and store in file `.env` .
 Setting these variables as environment variables with the "oacs\_" prefix (suitable for e.g. docker setups for `defaultConfig` in NS\_CONF ([see naviserver commit](https://bitbucket.org/naviserver/naviserver/commits/f9a919f8cb39fdf3b25fac67f5fde69f27c2a83a)).
 Code example from NaviServer configuration file is:
 
-      ...
-      # All default variables in defaultConfig can be overloaded by
-      # 1) setting these variables in this file (highest precedence)
-      # 2) setting these variables as environment variables with
-      #    the "oacs_" prefix (suitable for e.g. docker setups)
-      # 3) set the variables from the default values.
-      #
-      set defaultConfig {
-          hostname	localhost
-          ipaddress	127.0.0.1
-          httpport	8000
-          httpsport	""
-
-          server     "openacs"
-          serverroot	/var/www/$server
-          logroot	$serverroot/log/
-          homedir	/usr/local/ns
-          bindir	$homedir/bin
-          db_name	$server
-          db_user	$server
-          db_host	localhost
-          db_port	""
-          db_password	"testing"
-      }
+    ...
+    # All default variables in defaultConfig can be overloaded by
+    # 1) setting these variables in this file (highest precedence)
+    # 2) setting these variables as environment variables with
+    #    the "oacs_" prefix (suitable for e.g. docker setups)
+    # 3) set the variables from the default values.
+    #
+    set defaultConfig {
+        hostname	localhost
+        ipaddress	127.0.0.1
+        httpport	8000
+        httpsport	""
+    
+        server     "openacs"
+        serverroot	/var/www/$server
+        logroot	$serverroot/log/
+        homedir	/usr/local/ns
+        bindir	$homedir/bin
+        db_name	$server
+        db_user	$server
+        db_host	localhost
+        db_port	""
+        db_password	"testing"
+    }
     ...
 
 Environment variables from .env file are:
@@ -579,7 +580,7 @@ Docker-compose uses the following variables for pulling OpenACS image from docke
 1.  Put the configuration file to `rootfs/usr/local/ns/conf`
 2.  Run docker compose
 
-        NS_CONF="/usr/local/ns/conf/my-config.tcl" docker-compose up
+    NS_CONF="/usr/local/ns/conf/my-config.tcl" docker-compose up
 
 
 <a id="postgresql-docker-image"></a>
@@ -667,3 +668,4 @@ For debugging and maintenance purposes you may want access the containers shell.
     docker exec -it openacs_openacs_1 /bin/bash
 
     docker exec -it openacs_postgres_1 /bin/bash
+

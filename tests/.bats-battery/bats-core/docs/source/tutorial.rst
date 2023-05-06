@@ -43,7 +43,7 @@ Your first test
 Now we want to add our first test.
 
 In the tutorial repository, we want to build up our project in a TDD fashion.
-Thus, we start with an empty project and our first test is to just run our (non existing) shell script.
+Thus, we start with an empty project and our first test is to just run our (nonexistent) shell script.
 
 We start by creating a new test file `test/test.bats`
 
@@ -152,7 +152,7 @@ Therefore, our test could execute `project.sh` directly, without using a (relati
 Dealing with output
 -------------------
 
-Okay, we have a green test but our executable does not anything useful.
+Okay, we have a green test but our executable does not do anything useful.
 To keep things simple, let us start with an error message. Our new `src/project.sh` now reads:
 
 .. code-block:: bash
@@ -231,7 +231,7 @@ Then, `run` sucks up the stdout and stderr of the command it ran and stores it i
 This means `run` never fails the test and won't generate any context/output in the log of a failed test on its own.
 
 Marking the test as failed and printing context information is up to the consumers of `$status` and `$output`. 
-`assert_output` is such a consumer, it compares `$output` to the the parameter it got and tells us quite succinctly that it did not match in this case.
+`assert_output` is such a consumer, it compares `$output` to the parameter it got and tells us quite succinctly that it did not match in this case.
 
 For our current test we don't care about any other output or the error message, so we want it gone.
 `grep` is always at our fingertips, so we tape together this ramshackle construct
@@ -244,7 +244,7 @@ which gives us the following test result:
 
 .. code-block:: console
 
-    $ LANG=C ./test/bats/bin/bats test/test.bats 
+    $ ./test/bats/bin/bats test/test.bats 
      ✗ can run our script
        (in test file test/test.bats, line 13)
          `run project.sh | grep Welcome' failed
@@ -257,7 +257,7 @@ This is a common mistake that can happen when our mind parses the file different
 `run` is just a function, so the pipe won't actually be forwarded into the function. Bash reads this as `(run project.sh) | grep Welcome`, 
 instead of our intended `run (project.sh | grep Welcome)`.
 
-Unfortunately, the latter is no valid bash syntax, so we have to work around it, e.g. by using a function:
+Unfortunately, the latter is not valid bash syntax, so we have to work around it, e.g. by using a function:
 
 .. code-block:: bash
 
@@ -567,7 +567,7 @@ As an example, we want to add an echo server capability to our project. First, w
     setup_file() {
         load 'test_helper/common-setup'
         _common_setup
-        PORT=$(project.sh start-echo-server >/dev/null 2>&1)
+        PORT=$(project.sh start-echo-server 2>&1 >/dev/null)
         export PORT
     }
 

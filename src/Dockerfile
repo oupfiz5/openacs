@@ -74,8 +74,8 @@ EXPOSE 8000
 
 # * Environment
 
-# ** Entrypoint
+# * Entrypoint
 ENTRYPOINT ["/run_openacs.sh"]
 
-# ** Cmd
+# * Cmd
 CMD [ "/usr/local/ns/conf/openacs-config.tcl"]

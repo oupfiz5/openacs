@@ -4,12 +4,17 @@ load 'test_helper'
 fixtures 'exist'
 
 setup () {
- touch ${TEST_FIXTURE_ROOT}/dir/owner ${TEST_FIXTURE_ROOT}/dir/notowner
-}
-teardown () {
-    rm -f ${TEST_FIXTURE_ROOT}/dir/owner ${TEST_FIXTURE_ROOT}/dir/notowner
+  touch ${TEST_FIXTURE_ROOT}/dir/owner ${TEST_FIXTURE_ROOT}/dir/notowner
+  # There is PATH addition to /usr/sbin which won't come by default on bash3
+  # on macOS
+  chown_path=$(PATH="$PATH:/usr/sbin" command -v chown 2>/dev/null)
+  bats_sudo "$chown_path" root ${TEST_FIXTURE_ROOT}/dir/owner
+  bats_sudo "$chown_path" daemon ${TEST_FIXTURE_ROOT}/dir/notowner
 }
 
+teardown () {
+  bats_sudo rm -f ${TEST_FIXTURE_ROOT}/dir/owner ${TEST_FIXTURE_ROOT}/dir/notowner
+}
 
 # Correctness
 @test 'assert_file_owner() <file>: returns 0 if <file> user root is the owner of the file' {
@@ -18,7 +23,7 @@ teardown () {
   run assert_file_owner "$owner" "$file"
   [ "$status" -eq 0 ]
   echo ${#lines[@]}
-  [ "${#lines[@]}" -eq 0 ] 
+  [ "${#lines[@]}" -eq 0 ]
 
 }
 

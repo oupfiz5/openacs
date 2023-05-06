@@ -9,9 +9,10 @@ fixtures 'temp'
   teardown() { rm -r -- "$TEST_TEMP_DIR"; }
 
   TEST_TEMP_DIR="$(temp_make)"
+  echo $TEST_TEMP_DIR
 
   local -r literal="${BATS_TMPDIR}/${BATS_TEST_FILENAME##*/}-"
-  local -r pattern='[1-9][0-9]*-.{10}'
+  local -r pattern='[1-9][0-9]*-.{6}'
   [[ $TEST_TEMP_DIR =~ ^"${literal}"${pattern}$ ]] || false
   [ -e "$TEST_TEMP_DIR" ]
 }
@@ -23,12 +24,21 @@ fixtures 'temp'
   [ "$status" -eq 1 ]
   [ "${#lines[@]}" -eq 3 ]
   [ "${lines[0]}" == '-- ERROR: temp_make --' ]
-  [[ ${lines[1]} == 'mktemp: failed to create directory via template'* ]]
+  if [[ "$OSTYPE" == darwin* ]]; then
+    REGEX="mktemp: mkdtemp failed on $BATS_TMPDIR/.*: No such file or directory"
+  else
+    REGEX="mktemp: (failed to create directory via template|\(null\): No such file or directory)"
+  fi
+  [[ ${lines[1]} =~ $REGEX ]] || false
   [ "${lines[2]}" == '--' ]
 }
 
 @test "temp_make() <var>: works when called from \`setup'" {
   bats "${TEST_FIXTURE_ROOT}/temp_make-setup.bats"
+}
+
+@test "temp_make() <var>: works when called from \`setup_file'" {
+  bats "${TEST_FIXTURE_ROOT}/temp_make-setup_file.bats"
 }
 
 @test "temp_make() <var>: works when called from \`@test'" {
@@ -39,14 +49,16 @@ fixtures 'temp'
   bats "${TEST_FIXTURE_ROOT}/temp_make-teardown.bats"
 }
 
+@test "temp_make() <var>: works when called from \`teardown_file'" {
+  bats "${TEST_FIXTURE_ROOT}/temp_make-teardown_file.bats"
+}
+
 @test "temp_make() <var>: does not work when called from \`main'" {
   run bats "${TEST_FIXTURE_ROOT}/temp_make-main.bats"
 
   [ "$status" -eq 1 ]
-  [ "${#lines[@]}" -eq 3 ]
-  [ "${lines[0]}" == '-- ERROR: temp_make --' ]
-  [ "${lines[1]}" == "Must be called from \`setup', \`@test' or \`teardown'" ]
-  [ "${lines[2]}" == '--' ]
+  [[ "${output}" == *'-- ERROR: temp_make --'* ]] || false
+  [[ "${output}" == *"Must be called from \`setup', \`@test' or \`teardown'"* ]] || false
 }
 
 # Options
@@ -56,7 +68,7 @@ test_p_prefix() {
   TEST_TEMP_DIR="$(temp_make "$@" 'test-')"
 
   local -r literal="${BATS_TMPDIR}/test-${BATS_TEST_FILENAME##*/}-"
-  local -r pattern='[1-9][0-9]*-.{10}'
+  local -r pattern='[1-9][0-9]*-.{6}'
   [[ $TEST_TEMP_DIR =~ ^"${literal}"${pattern}$ ]] || false
   [ -e "$TEST_TEMP_DIR" ]
 }

@@ -30,7 +30,7 @@ on:
 jobs:
   build:
     name: Build and push image to dockerhub
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Repo checkout
         uses: actions/checkout@v2
@@ -39,12 +39,15 @@ jobs:
         run: |
           echo  ${{ secrets.DOCKERHUB_TOKEN }} | docker login --username ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
-      - name: Build images
+      - name: OpenACS. Build and push image.
         run: |
+          echo "::group::Prepare environment"
+          set -a; source ${GITHUB_WORKSPACE}/src/VERSIONS ; set +a;
           cd ${GITHUB_WORKSPACE}/src/hook
+          echo "::endgroup::"
+          echo "::group::Build image"
           ./build.sh
-
-      - name: Push images
-        run: |
-          cd ${GITHUB_WORKSPACE}/src/hook
+          echo "::endgroup::"
+          echo "::group::Push image"
           ./push.sh
+          echo "::endgroup::"
